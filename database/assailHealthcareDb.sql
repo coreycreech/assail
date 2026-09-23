@@ -1,0 +1,190 @@
+CREATE DATABASE  IF NOT EXISTS `assailHealthcare` /*!40100 DEFAULT CHARACTER SET utf8mb3 */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `assailHealthcare`;
+-- MySQL dump 10.13  Distrib 8.0.41, for Win64 (x86_64)
+--
+-- Host: p3nlmysql163plsk.secureserver.net    Database: assailHealthcare
+-- ------------------------------------------------------
+-- Server version	8.4.8-8
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `CalendarEvent`
+--
+
+DROP TABLE IF EXISTS `CalendarEvent`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `CalendarEvent` (
+  `eventId` int NOT NULL AUTO_INCREMENT,
+  `eventTitle` varchar(50) NOT NULL,
+  `eventStart` datetime NOT NULL,
+  `eventEnd` datetime NOT NULL,
+  `eventSubject` varchar(100) NOT NULL,
+  `eventDetail` varchar(300) NOT NULL,
+  `isBlock` tinyint(1) NOT NULL,
+  `isReadOnly` tinyint(1) NOT NULL,
+  `recurrenceRule` varchar(50) NOT NULL,
+  `isAllDay` tinyint(1) NOT NULL,
+  PRIMARY KEY (`eventId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `CalendarEvent`
+--
+
+LOCK TABLES `CalendarEvent` WRITE;
+/*!40000 ALTER TABLE `CalendarEvent` DISABLE KEYS */;
+/*!40000 ALTER TABLE `CalendarEvent` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `Document`
+--
+
+DROP TABLE IF EXISTS `Document`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `Document` (
+  `docId` int NOT NULL AUTO_INCREMENT,
+  `docName` varchar(50) NOT NULL,
+  `docBlob` blob NOT NULL,
+  `clientId` int NOT NULL,
+  `filePath` varchar(200) NOT NULL,
+  PRIMARY KEY (`docId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `Document`
+--
+
+LOCK TABLES `Document` WRITE;
+/*!40000 ALTER TABLE `Document` DISABLE KEYS */;
+/*!40000 ALTER TABLE `Document` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `PageInfo`
+--
+
+DROP TABLE IF EXISTS `PageInfo`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `PageInfo` (
+  `pageId` int NOT NULL AUTO_INCREMENT,
+  `name` char(30) NOT NULL,
+  `title` char(50) NOT NULL,
+  `information` varchar(500) NOT NULL,
+  PRIMARY KEY (`pageId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `PageInfo`
+--
+
+LOCK TABLES `PageInfo` WRITE;
+/*!40000 ALTER TABLE `PageInfo` DISABLE KEYS */;
+/*!40000 ALTER TABLE `PageInfo` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `PageSection`
+--
+
+DROP TABLE IF EXISTS `PageSection`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `PageSection` (
+  `sectionId` int NOT NULL AUTO_INCREMENT,
+  `sectionInfo` varchar(500) NOT NULL,
+  `sectionTitle` char(50) NOT NULL,
+  `pageId` int NOT NULL,
+  PRIMARY KEY (`sectionId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `PageSection`
+--
+
+LOCK TABLES `PageSection` WRITE;
+/*!40000 ALTER TABLE `PageSection` DISABLE KEYS */;
+/*!40000 ALTER TABLE `PageSection` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `User`
+--
+
+DROP TABLE IF EXISTS `User`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `User` (
+  `userId` int NOT NULL AUTO_INCREMENT,
+  `userName` varchar(30) NOT NULL,
+  `password` varchar(30) NOT NULL,
+  `userTypeId` int NOT NULL,
+  `email` varchar(50) NOT NULL,
+  `sirName` char(4) NOT NULL,
+  `firstName` varchar(30) NOT NULL,
+  `middleName` varchar(30) NOT NULL,
+  `lastName` varchar(30) NOT NULL,
+  `suffix` char(4) NOT NULL,
+  PRIMARY KEY (`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `User`
+--
+
+LOCK TABLES `User` WRITE;
+/*!40000 ALTER TABLE `User` DISABLE KEYS */;
+/*!40000 ALTER TABLE `User` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `UserType`
+--
+
+DROP TABLE IF EXISTS `UserType`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `UserType` (
+  `userTypeId` int NOT NULL AUTO_INCREMENT,
+  `userTypeDesc` varchar(50) NOT NULL,
+  PRIMARY KEY (`userTypeId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `UserType`
+--
+
+LOCK TABLES `UserType` WRITE;
+/*!40000 ALTER TABLE `UserType` DISABLE KEYS */;
+/*!40000 ALTER TABLE `UserType` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-09-21 15:46:21

@@ -1,0 +1,48 @@
+<div class="shell">
+  <aside>
+    <div class="brand"><span class="brand-mark">&#10022;</span>assail<span>health</span></div>
+    <p class="workspace">CARE TEAM PORTAL</p>
+    <nav>
+      <button [class.active]="view()==='dashboard'" (click)="view.set('dashboard')">&#8962; <span>Overview</span></button>
+      <button [class.active]="view()==='calendar'" (click)="view.set('calendar')">&#9635; <span>Care calendar</span></button>
+      <button [class.active]="view()==='documents'" (click)="view.set('documents')">&#128196; <span>Documents</span></button>
+      <button [class.active]="view()==='content'" (click)="view.set('content')">&#9671; <span>Page content</span></button>
+    </nav>
+    <div class="support"><b>Need help?</b><p>Contact Assail support for care coordination assistance.</p><button>Contact support &#8594;</button></div>
+    <div class="profile"><div class="avatar">AC</div><div><b>Alex Carter</b><small>Care coordinator</small></div><span>&#8964;</span></div>
+  </aside>
+  <main>
+    <header><div><p class="eyebrow">{{todayLabel}}</p><h1>{{view()==='dashboard'?'Good morning, Alex.':(view()|titlecase)}}</h1></div><div class="status" [class.offline]="!online()"><i></i>{{online()?'System online':'Connecting'}}</div></header>
+    <p class="error" *ngIf="error()">{{error()}}</p>
+    <section *ngIf="view()==='dashboard'">
+      <div class="hero"><div><p class="eyebrow">ASSAIL HEALTHCARE</p><h2>Care that feels<br>connected.</h2><p>Bring every appointment, document, and care conversation into one calm, clear place.</p><button class="primary" (click)="view.set('calendar')">View care calendar <span>&#8594;</span></button></div><div class="hero-art"><div class="sun"></div><div class="leaf one"></div><div class="leaf two"></div><div class="leaf three"></div><div class="orb">&#9825;</div></div></div>
+      <div class="section-head"><div><p class="eyebrow">AT A GLANCE</p><h2>Today's care</h2></div><button class="text-btn" (click)="view.set('calendar')">Full calendar &#8594;</button></div>
+      <div class="grid"><article class="card metric"><span class="icon peach">&#9827;</span><p>Scheduled today</p><h3>{{events().length||0}}</h3><small>Appointments & care tasks</small></article><article class="card metric"><span class="icon mint">&#10003;</span><p>Documents</p><h3>{{documents().length}}</h3><small>Available care records</small></article><article class="card next"><p class="eyebrow">UP NEXT</p><ng-container *ngIf="upcoming()[0] as event;else noEvents"><h3>{{event.eventTitle}}</h3><p>{{event.eventStart|date:'MMM d, h:mm a'}}</p><span>{{event.eventSubject}}</span></ng-container><ng-template #noEvents><h3>No upcoming items</h3><p>Your care calendar is clear.</p></ng-template></article></div>
+    </section>
+    <section *ngIf="view()==='calendar'">
+      <div class="section-head"><div><p class="eyebrow">CARE COORDINATION</p><h2>Care calendar</h2></div><div class="action-row"><button class="text-btn" (click)="refresh()">Refresh</button><button class="primary" (click)="appointmentOpen ? cancelAppointment() : openNewAppointment()">{{appointmentOpen?'Close':'Add appointment'}}</button></div></div>
+      <form class="card appointment-form" *ngIf="appointmentOpen" (ngSubmit)="saveAppointment()">
+        <div class="form-heading wide"><span class="form-icon">+</span><div><h3>{{editingEventId === undefined ? 'New appointment' : 'Edit appointment'}}</h3><p>{{editingEventId === undefined ? 'Add the visit details and choose dates from the calendar.' : 'Update the visit details, dates, or times.'}}</p></div></div>
+        <label class="wide">Appointment title<input name="eventTitle" [(ngModel)]="newAppointment.eventTitle" required maxlength="50" placeholder="e.g. Follow-up visit"></label>
+        <label>Subject<input name="eventSubject" [(ngModel)]="newAppointment.eventSubject" required maxlength="100" placeholder="e.g. Primary care"></label>
+        <label>Repeats<select name="recurrenceRule" [(ngModel)]="newAppointment.recurrenceRule"><option value="">Does not repeat</option><option value="DAILY">Daily</option><option value="WEEKLY">Weekly</option><option value="MONTHLY">Monthly</option><option value="YEARLY">Yearly</option></select></label>
+        <fieldset class="date-card">
+          <legend>Starts</legend>
+          <label>Date<input name="startDate" [ngModel]="newAppointment.eventStart.slice(0, 10)" (ngModelChange)="setAppointmentDate('start', $event)" required type="date" aria-label="Start date"></label>
+          <label>Time<input name="startTime" [ngModel]="newAppointment.eventStart.slice(11, 16)" (ngModelChange)="setAppointmentTime('start', $event)" required type="time" aria-label="Start time"></label>
+        </fieldset>
+        <fieldset class="date-card">
+          <legend>Ends</legend>
+          <label>Date<input name="endDate" [ngModel]="newAppointment.eventEnd.slice(0, 10)" (ngModelChange)="setAppointmentDate('end', $event)" required type="date" aria-label="End date"></label>
+          <label>Time<input name="endTime" [ngModel]="newAppointment.eventEnd.slice(11, 16)" (ngModelChange)="setAppointmentTime('end', $event)" required type="time" aria-label="End time"></label>
+        </fieldset>
+        <label class="wide">Notes<textarea name="eventDetail" [(ngModel)]="newAppointment.eventDetail" required maxlength="300" placeholder="Add details to help everyone prepare"></textarea></label>
+        <label class="check wide"><input name="isAllDay" [(ngModel)]="newAppointment.isAllDay" type="checkbox"> This is an all-day appointment</label>
+        <div class="wide form-actions"><span>Complete the title, subject, dates, times, and notes. Repeats is optional.</span><div><button type="button" class="text-btn cancel" (click)="cancelAppointment()">Cancel</button><button class="primary" type="submit">{{editingEventId === undefined ? 'Save appointment' : 'Save changes'}}</button></div></div>
+      </form>
+      <div class="card table-card"><div class="calendar-empty" *ngIf="!events().length">No events yet. Select Add appointment to create the first one.</div><div class="event" *ngFor="let e of events()"><div class="date"><b>{{e.eventStart|date:'d'}}</b><span>{{e.eventStart|date:'MMM'}}</span></div><div class="event-info"><h3>{{e.eventTitle}}</h3><p>{{e.eventSubject}} · {{e.eventStart|date:'h:mm a'}} – {{e.eventEnd|date:'h:mm a'}}</p><small>{{e.eventDetail}}</small></div><span class="event-tag">{{e.isBlock?'Blocked':'Scheduled'}}</span><div class="event-actions"><button type="button" class="event-action" (click)="editEvent(e)" [attr.aria-label]="'Edit '+e.eventTitle">Edit</button><button type="button" class="event-action delete-event" (click)="deleteEvent(e)" [attr.aria-label]="'Delete '+e.eventTitle">Delete</button></div></div></div>
+    </section>
+    <section *ngIf="view()==='documents'"><div class="section-head"><div><p class="eyebrow">SHARED RECORDS</p><h2>Documents</h2></div></div><div class="upload card"><div><h3>Upload a care document</h3><p>Files are securely stored with the client record.</p></div><label class="file">Choose file<input type="file" (change)="chooseFile($event)"></label><input class="client-input" type="number" [(ngModel)]="clientId" aria-label="Client ID"><button class="primary" [disabled]="!selectedFile" (click)="upload()">Upload</button></div><div class="card table-card"><div class="document" *ngFor="let d of documents()"><span class="doc-icon">&#128196;</span><div><h3>{{d.docName}}</h3><p>Client #{{d.clientId}}</p></div><a [href]="'http://localhost:3000/api/documents/'+d.docId+'/download'">Download</a><button class="delete" (click)="removeDocument(d.docId)">Remove</button></div><div class="calendar-empty" *ngIf="!documents().length">No documents have been uploaded.</div></div></section>
+    <section *ngIf="view()==='content'"><p class="eyebrow">CMS</p><h2>Page content</h2><div class="content-grid"><article class="card"><h3>Editable page information</h3><p>Use the API's <code>/api/pages</code> and page-section endpoints to manage site copy, titles, and sections.</p></article><article class="card"><h3>API connection</h3><p>Content is kept in the <code>PageInfo</code> and <code>PageSection</code> tables included in your supplied schema.</p></article></div></section>
+  </main>
+</div>
