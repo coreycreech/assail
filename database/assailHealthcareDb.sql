@@ -49,19 +49,36 @@ LOCK TABLES `CalendarEvent` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `Document`
+-- Table structure for table `Client`
 --
 
 DROP TABLE IF EXISTS `Document`;
+DROP TABLE IF EXISTS `Client`;
+CREATE TABLE `Client` (
+  `clientId` int NOT NULL AUTO_INCREMENT,
+  `ClientName` varchar(45) NOT NULL,
+  `address` varchar(45) DEFAULT NULL,
+  `city` varchar(45) DEFAULT NULL,
+  `state` varchar(2) DEFAULT NULL,
+  `zip` varchar(15) DEFAULT NULL,
+  PRIMARY KEY (`clientId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+--
+-- Table structure for table `Document`
+--
+
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `Document` (
   `docId` int NOT NULL AUTO_INCREMENT,
   `docName` varchar(50) NOT NULL,
-  `docBlob` blob NOT NULL,
+  `docBlob` mediumblob NOT NULL,
   `clientId` int NOT NULL,
   `filePath` varchar(200) NOT NULL,
-  PRIMARY KEY (`docId`)
+  PRIMARY KEY (`docId`),
+  KEY `idx_document_clientId` (`clientId`),
+  CONSTRAINT `fk_document_client` FOREIGN KEY (`clientId`) REFERENCES `Client` (`clientId`) ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

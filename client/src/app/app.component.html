@@ -6,6 +6,7 @@
       <button [class.active]="view()==='dashboard'" (click)="view.set('dashboard')">&#8962; <span>Overview</span></button>
       <button [class.active]="view()==='calendar'" (click)="view.set('calendar')">&#9635; <span>Care calendar</span></button>
       <button [class.active]="view()==='documents'" (click)="view.set('documents')">&#128196; <span>Documents</span></button>
+      <button [class.active]="view()==='clients'" (click)="view.set('clients')">&#9787; <span>Clients</span></button>
       <button [class.active]="view()==='content'" (click)="view.set('content')">&#9671; <span>Page content</span></button>
     </nav>
     <div class="support"><b>Need help?</b><p>Contact Assail support for care coordination assistance.</p><button>Contact support &#8594;</button></div>
@@ -42,7 +43,43 @@
       </form>
       <div class="card table-card"><div class="calendar-empty" *ngIf="!events().length">No events yet. Select Add appointment to create the first one.</div><div class="event" *ngFor="let e of events()"><div class="date"><b>{{e.eventStart|date:'d'}}</b><span>{{e.eventStart|date:'MMM'}}</span></div><div class="event-info"><h3>{{e.eventTitle}}</h3><p>{{e.eventSubject}} · {{e.eventStart|date:'h:mm a'}} – {{e.eventEnd|date:'h:mm a'}}</p><small>{{e.eventDetail}}</small></div><span class="event-tag">{{e.isBlock?'Blocked':'Scheduled'}}</span><div class="event-actions"><button type="button" class="event-action" (click)="editEvent(e)" [attr.aria-label]="'Edit '+e.eventTitle">Edit</button><button type="button" class="event-action delete-event" (click)="deleteEvent(e)" [attr.aria-label]="'Delete '+e.eventTitle">Delete</button></div></div></div>
     </section>
-    <section *ngIf="view()==='documents'"><div class="section-head"><div><p class="eyebrow">SHARED RECORDS</p><h2>Documents</h2></div></div><div class="upload card"><div><h3>Upload a care document</h3><p>Files are securely stored with the client record.</p></div><label class="file">Choose file<input type="file" (change)="chooseFile($event)"></label><input class="client-input" type="number" [(ngModel)]="clientId" aria-label="Client ID"><button class="primary" [disabled]="!selectedFile" (click)="upload()">Upload</button></div><div class="card table-card"><div class="document" *ngFor="let d of documents()"><span class="doc-icon">&#128196;</span><div><h3>{{d.docName}}</h3><p>Client #{{d.clientId}}</p></div><a [href]="'http://localhost:3000/api/documents/'+d.docId+'/download'">Download</a><button class="delete" (click)="removeDocument(d.docId)">Remove</button></div><div class="calendar-empty" *ngIf="!documents().length">No documents have been uploaded.</div></div></section>
+    <section *ngIf="view()==='documents'">
+      <div class="section-head"><div><p class="eyebrow">SHARED RECORDS</p><h2>Documents</h2></div></div>
+      <div class="card upload-panel">
+        <div class="upload-intro"><span class="upload-icon">&#8682;</span><div><p class="eyebrow">ADD TO CLIENT RECORD</p><h3>Upload a document</h3><p>Follow the two steps below. Your file is saved to the database and appears in the document list.</p></div></div>
+        <div class="upload-steps">
+          <div class="upload-step"><span class="step-number">1</span><div class="step-body"><b>Choose a document</b><p>PDF, Word, text, or image file up to 10 MB</p><label class="file-picker">Choose file<input type="file" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.txt" (change)="chooseFile($event)"></label></div></div>
+          <div class="upload-step"><span class="step-number">2</span><div class="step-body"><label class="client-label">Client record<select class="client-select" name="clientId" [(ngModel)]="clientId"><option [ngValue]="null" disabled>Select a client</option><option *ngFor="let client of clients()" [ngValue]="client.clientId">{{client.clientName}} (ID #{{client.clientId}})</option></select></label><p class="step-hint">Choose which client record should hold this document.</p><button type="button" class="add-client-toggle" (click)="clientCreationOpen=!clientCreationOpen">{{clientCreationOpen ? 'Cancel adding client' : '+ Add a client'}}</button><div class="client-create" *ngIf="clientCreationOpen"><label class="client-label">Client name<input name="newClientName" [(ngModel)]="newClientName" maxlength="45" required placeholder="e.g. Jordan Lee"></label><p class="step-hint">The client ID will be assigned automatically.</p><button type="button" class="primary save-client" [disabled]="!newClientName.trim()" (click)="addClient()">Save client</button></div><p class="step-hint" *ngIf="!clients().length">Add a client before uploading a document.</p></div></div>
+        </div>
+        <div class="upload-footer"><div class="selected-file" [class.has-file]="!!selectedFile" aria-live="polite"><span class="file-status-icon">{{selectedFile ? 'Ready' : 'Waiting'}}</span><span>{{selectedFile?.name || 'No file selected yet'}}</span></div><button class="primary upload-button" [disabled]="!selectedFile || !clientId" (click)="upload()">Upload document</button></div>
+        <p class="upload-note">Choose a file and select a client to enable the upload button. PDFs, images, and text files can be previewed; other files can be downloaded.</p>
+      </div>
+      <div class="card table-card"><div class="document" *ngFor="let d of documents()"><span class="doc-icon">&#128196;</span><div class="document-info"><h3>{{d.docName}}</h3><p>Client #{{d.clientId}}</p></div><a *ngIf="canPreviewDocument(d)" [href]="'http://localhost:3000/api/documents/'+d.docId+'/view'" target="_blank" rel="noopener noreferrer">View</a><span class="preview-unavailable" *ngIf="!canPreviewDocument(d)">Preview unavailable</span><a [href]="'http://localhost:3000/api/documents/'+d.docId+'/download'">Download</a><button class="delete" (click)="removeDocument(d.docId)">Remove</button></div><div class="calendar-empty" *ngIf="!documents().length">No documents have been uploaded yet. Choose a file above to add one.</div></div>
+    </section>
+    <section *ngIf="view()==='clients'">
+      <div class="section-head"><div><p class="eyebrow">CLIENT DIRECTORY</p><h2>Clients</h2></div><button class="primary" (click)="clientFormOpen ? cancelClientForm() : startCreateClient()">{{clientFormOpen ? 'Close' : 'Add client'}}</button></div>
+      <form class="card client-form" *ngIf="clientFormOpen" (ngSubmit)="saveClient()">
+        <div class="form-heading wide"><span class="form-icon">+</span><div><h3>{{editingClientId === undefined ? 'Add a client' : 'Edit client'}}</h3><p>Enter the client's details for the care record.</p></div></div>
+        <p class="wide client-id-note" *ngIf="editingClientId === undefined">Client ID will be assigned automatically when you save.</p>
+        <p class="wide client-id-note" *ngIf="editingClientId !== undefined">Client ID: #{{editingClientId}} (cannot be changed)</p>
+        <label>Client name<input name="clientName" [(ngModel)]="clientDraft.clientName" maxlength="45" required placeholder="Client name"></label>
+        <label class="wide">Address<input name="address" [(ngModel)]="clientDraft.address" maxlength="45" placeholder="Street address"></label>
+        <label>City<input name="city" [(ngModel)]="clientDraft.city" maxlength="45" placeholder="City"></label>
+        <label>State<select name="state" [(ngModel)]="clientDraft.state">
+          <option value="">Select a state</option>
+          <option *ngFor="let state of usStates" [value]="state.code">{{state.name}} ({{state.code}})</option>
+        </select></label>
+        <label>ZIP code<input name="zip" [(ngModel)]="clientDraft.zip" maxlength="15" placeholder="ZIP code"></label>
+        <div class="wide form-actions"><span>Client ID is automatically generated and cannot be changed.</span><div><button type="button" class="text-btn cancel" (click)="cancelClientForm()">Cancel</button><button class="primary" type="submit">{{editingClientId === undefined ? 'Save client' : 'Save changes'}}</button></div></div>
+      </form>
+      <div class="client-list" *ngIf="clients().length; else noClients">
+        <article class="card client-record" *ngFor="let client of clients()">
+          <div class="client-record-heading"><div><p class="eyebrow">CLIENT #{{client.clientId}}</p><h3>{{client.clientName}}</h3></div><div class="client-record-actions"><button type="button" class="event-action" (click)="editClient(client)">Edit</button><button type="button" class="event-action delete-event" (click)="deleteClientRecord(client)">Delete</button></div></div>
+          <div class="client-details"><p><b>Address</b><span>{{client.address || 'Not provided'}}</span></p><p><b>City</b><span>{{client.city || 'Not provided'}}</span></p><p><b>State</b><span>{{client.state || 'Not provided'}}</span></p><p><b>ZIP code</b><span>{{client.zip || 'Not provided'}}</span></p></div>
+        </article>
+      </div>
+      <ng-template #noClients><div class="card calendar-empty">No clients yet. Select Add client to create the first record.</div></ng-template>
+    </section>
     <section *ngIf="view()==='content'"><p class="eyebrow">CMS</p><h2>Page content</h2><div class="content-grid"><article class="card"><h3>Editable page information</h3><p>Use the API's <code>/api/pages</code> and page-section endpoints to manage site copy, titles, and sections.</p></article><article class="card"><h3>API connection</h3><p>Content is kept in the <code>PageInfo</code> and <code>PageSection</code> tables included in your supplied schema.</p></article></div></section>
   </main>
 </div>

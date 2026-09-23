@@ -1,9 +1,9 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, CalendarEvent, DocumentItem, NewCalendarEvent } from './api.service';
+import { ApiService, CalendarEvent, ClientFields, ClientItem, DocumentItem, NewCalendarEvent } from './api.service';
 
-type View = 'dashboard' | 'calendar' | 'documents' | 'content';
+type View = 'dashboard' | 'calendar' | 'documents' | 'clients' | 'content';
 type AppointmentBoundary = 'start' | 'end';
 
 @Component({
@@ -13,15 +13,42 @@ type AppointmentBoundary = 'start' | 'end';
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
+  readonly usStates = [
+    { code: 'AL', name: 'Alabama' }, { code: 'AK', name: 'Alaska' }, { code: 'AZ', name: 'Arizona' },
+    { code: 'AR', name: 'Arkansas' }, { code: 'CA', name: 'California' }, { code: 'CO', name: 'Colorado' },
+    { code: 'CT', name: 'Connecticut' }, { code: 'DE', name: 'Delaware' }, { code: 'FL', name: 'Florida' },
+    { code: 'GA', name: 'Georgia' }, { code: 'HI', name: 'Hawaii' }, { code: 'ID', name: 'Idaho' },
+    { code: 'IL', name: 'Illinois' }, { code: 'IN', name: 'Indiana' }, { code: 'IA', name: 'Iowa' },
+    { code: 'KS', name: 'Kansas' }, { code: 'KY', name: 'Kentucky' }, { code: 'LA', name: 'Louisiana' },
+    { code: 'ME', name: 'Maine' }, { code: 'MD', name: 'Maryland' }, { code: 'MA', name: 'Massachusetts' },
+    { code: 'MI', name: 'Michigan' }, { code: 'MN', name: 'Minnesota' }, { code: 'MS', name: 'Mississippi' },
+    { code: 'MO', name: 'Missouri' }, { code: 'MT', name: 'Montana' }, { code: 'NE', name: 'Nebraska' },
+    { code: 'NV', name: 'Nevada' }, { code: 'NH', name: 'New Hampshire' }, { code: 'NJ', name: 'New Jersey' },
+    { code: 'NM', name: 'New Mexico' }, { code: 'NY', name: 'New York' }, { code: 'NC', name: 'North Carolina' },
+    { code: 'ND', name: 'North Dakota' }, { code: 'OH', name: 'Ohio' }, { code: 'OK', name: 'Oklahoma' },
+    { code: 'OR', name: 'Oregon' }, { code: 'PA', name: 'Pennsylvania' }, { code: 'RI', name: 'Rhode Island' },
+    { code: 'SC', name: 'South Carolina' }, { code: 'SD', name: 'South Dakota' }, { code: 'TN', name: 'Tennessee' },
+    { code: 'TX', name: 'Texas' }, { code: 'UT', name: 'Utah' }, { code: 'VT', name: 'Vermont' },
+    { code: 'VA', name: 'Virginia' }, { code: 'WA', name: 'Washington' }, { code: 'WV', name: 'West Virginia' },
+    { code: 'WI', name: 'Wisconsin' }, { code: 'WY', name: 'Wyoming' }
+  ];
+
   view = signal<View>('dashboard');
   events = signal<CalendarEvent[]>([]);
   documents = signal<DocumentItem[]>([]);
+  clients = signal<ClientItem[]>([]);
   online = signal(false);
   error = signal('');
   appointmentOpen = false;
   editingEventId?: number;
   selectedFile?: File;
-  clientId = 1;
+  private documentFileInput?: HTMLInputElement;
+  clientId: number | null = null;
+  clientCreationOpen = false;
+  newClientName = '';
+  clientFormOpen = false;
+  editingClientId?: number;
+  clientDraft: ClientFields = { clientName: '', address: '', city: '', state: '', zip: '' };
   today = new Date();
   todayLabel = this.today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   upcoming = computed(() => this.events().slice(0, 4));
@@ -53,6 +80,13 @@ export class AppComponent implements OnInit {
     });
     this.api.events().subscribe({ next: events => this.events.set(events), error: () => {} });
     this.api.documents().subscribe({ next: documents => this.documents.set(documents), error: () => {} });
+    this.api.clients().subscribe({
+      next: clients => {
+        this.clients.set(clients);
+        if (!clients.some(client => client.clientId === this.clientId)) this.clientId = clients[0]?.clientId ?? null;
+      },
+      error: () => {}
+    });
   }
 
   setAppointmentDate(boundary: AppointmentBoundary, date: string) {
@@ -133,14 +167,101 @@ export class AppComponent implements OnInit {
   }
 
   chooseFile(event: Event) {
-    this.selectedFile = (event.target as HTMLInputElement).files?.[0];
+    this.documentFileInput = event.target as HTMLInputElement;
+    this.selectedFile = this.documentFileInput.files?.[0];
+  }
+
+  canPreviewDocument(document: DocumentItem) {
+    return /\.(pdf|png|jpe?g|gif|webp|txt)$/i.test(document.filePath || document.docName);
+  }
+
+  addClient() {
+    const clientName = this.newClientName.trim();
+    if (!clientName) return;
+    this.api.createClient({ clientName, address: '', city: '', state: '', zip: '' }).subscribe({
+      next: client => {
+        this.clients.update(clients => [...clients, client].sort((a, b) => a.clientName.localeCompare(b.clientName)));
+        this.clientId = client.clientId;
+        this.newClientName = '';
+        this.clientCreationOpen = false;
+        this.error.set('');
+      },
+      error: () => this.error.set('Unable to add client. Please try again.')
+    });
+  }
+
+  startCreateClient() {
+    this.editingClientId = undefined;
+    this.clientDraft = { clientName: '', address: '', city: '', state: '', zip: '' };
+    this.clientFormOpen = true;
+    this.error.set('');
+  }
+
+  editClient(client: ClientItem) {
+    this.editingClientId = client.clientId;
+    this.clientDraft = {
+      clientName: client.clientName,
+      address: client.address || '',
+      city: client.city || '',
+      state: client.state || '',
+      zip: client.zip || ''
+    };
+    this.clientFormOpen = true;
+    this.error.set('');
+  }
+
+  cancelClientForm() {
+    this.clientFormOpen = false;
+    this.editingClientId = undefined;
+  }
+
+  saveClient() {
+    const clientName = this.clientDraft.clientName.trim();
+    if (!clientName) return;
+    const editingClientId = this.editingClientId;
+    const fields: ClientFields = {
+      clientName,
+      address: this.clientDraft.address?.trim() || null,
+      city: this.clientDraft.city?.trim() || null,
+      state: this.clientDraft.state?.trim() || null,
+      zip: this.clientDraft.zip?.trim() || null
+    };
+    const save = editingClientId === undefined
+      ? this.api.createClient(fields)
+      : this.api.updateClient(editingClientId, fields);
+    save.subscribe({
+      next: client => {
+        this.clients.update(clients => [...clients.filter(item => item.clientId !== client.clientId), client]
+          .sort((a, b) => a.clientName.localeCompare(b.clientName)));
+        this.clientId = client.clientId;
+        this.cancelClientForm();
+        this.error.set('');
+      },
+      error: error => this.error.set(error.error?.message || 'Unable to save client. Please check the client ID and try again.')
+    });
+  }
+
+  deleteClientRecord(client: ClientItem) {
+    if (!window.confirm(`Delete client ${client.clientName} (ID #${client.clientId})?`)) return;
+    this.api.deleteClient(client.clientId).subscribe({
+      next: () => {
+        this.clients.update(clients => clients.filter(item => item.clientId !== client.clientId));
+        if (this.clientId === client.clientId) this.clientId = this.clients()[0]?.clientId ?? null;
+        this.error.set('');
+      },
+      error: error => this.error.set(error.error?.message || 'Unable to delete client. Please try again.')
+    });
   }
 
   upload() {
-    if (!this.selectedFile) return;
-    this.api.uploadDocument(this.selectedFile, this.clientId).subscribe({
+    const file = this.selectedFile;
+    const clientId = this.clientId;
+    if (!file || clientId === null) return;
+    this.api.uploadDocument(file, clientId).subscribe({
       next: () => {
         this.selectedFile = undefined;
+        if (this.documentFileInput) this.documentFileInput.value = '';
+        this.error.set('');
         this.api.documents().subscribe(documents => this.documents.set(documents));
       },
       error: () => this.error.set('Unable to upload document.')
