@@ -7,6 +7,7 @@
       <button [class.active]="view()==='calendar'" (click)="view.set('calendar')">&#9635; <span>Care calendar</span></button>
       <button [class.active]="view()==='documents'" (click)="view.set('documents')">&#128196; <span>Documents</span></button>
       <button [class.active]="view()==='clients'" (click)="view.set('clients')">&#9787; <span>Clients</span></button>
+      <button [class.active]="view()==='resources'" (click)="view.set('resources')">&#9873; <span>Resources</span></button>
       <button [class.active]="view()==='content'" (click)="view.set('content')">&#9671; <span>Page content</span></button>
     </nav>
     <div class="support"><b>Need help?</b><p>Contact Assail support for care coordination assistance.</p><button>Contact support &#8594;</button></div>
@@ -79,6 +80,30 @@
         </article>
       </div>
       <ng-template #noClients><div class="card calendar-empty">No clients yet. Select Add client to create the first record.</div></ng-template>
+    </section>
+    <section *ngIf="view()==='resources'">
+      <div class="section-head"><div><p class="eyebrow">CARE DIRECTORY</p><h2>Resources</h2></div><button class="primary" (click)="resourceFormOpen ? cancelResourceForm() : startCreateResource()">{{resourceFormOpen ? 'Close' : 'Add resource'}}</button></div>
+      <form class="card client-form resource-form" *ngIf="resourceFormOpen" (ngSubmit)="saveResource()">
+        <div class="form-heading wide"><span class="form-icon">+</span><div><h3>{{editingResourceId === undefined ? 'Add a resource' : 'Edit resource'}}</h3><p>Enter contact details for a care resource. All fields are optional.</p></div></div>
+        <p class="wide client-id-note" *ngIf="editingResourceId === undefined">Resource ID will be assigned automatically when you save.</p>
+        <p class="wide client-id-note" *ngIf="editingResourceId !== undefined">Resource ID: #{{editingResourceId}} (cannot be changed)</p>
+        <label>Name<input name="resourceName" [(ngModel)]="resourceDraft.name" maxlength="45" placeholder="Resource name"></label>
+        <label>Phone<input name="resourcePhone" [(ngModel)]="resourceDraft.phone" maxlength="15" type="tel" placeholder="Phone number"></label>
+        <label class="wide">Address line 1<input name="address1" [(ngModel)]="resourceDraft.address1" maxlength="45" placeholder="Street address"></label>
+        <label class="wide">Address line 2<input name="address2" [(ngModel)]="resourceDraft.address2" maxlength="45" placeholder="Suite, unit, etc."></label>
+        <label>City<input name="resourceCity" [(ngModel)]="resourceDraft.city" maxlength="45" placeholder="City"></label>
+        <label>State<input name="resourceState" [(ngModel)]="resourceDraft.state" maxlength="2" placeholder="Two-letter state"></label>
+        <label>ZIP code<input name="resourceZip" [(ngModel)]="resourceDraft.zip" maxlength="15" placeholder="ZIP code"></label>
+        <label>Website URL<input name="resourceUrl" [(ngModel)]="resourceDraft.Url" maxlength="100" type="url" placeholder="https://example.com"></label>
+        <div class="wide form-actions"><span>Resource ID is automatically generated.</span><div><button type="button" class="text-btn cancel" (click)="cancelResourceForm()">Cancel</button><button class="primary" type="submit">{{editingResourceId === undefined ? 'Save resource' : 'Save changes'}}</button></div></div>
+      </form>
+      <div class="client-list" *ngIf="resources().length; else noResources">
+        <article class="card client-record" *ngFor="let resource of resources()">
+          <div class="client-record-heading"><div><p class="eyebrow">RESOURCE #{{resource.resourceId}}</p><h3>{{resource.name || 'Unnamed resource'}}</h3></div><div class="client-record-actions"><button type="button" class="event-action" (click)="editResource(resource)">Edit</button><button type="button" class="event-action delete-event" (click)="deleteResource(resource)">Delete</button></div></div>
+          <div class="client-details resource-details"><p><b>Phone</b><span>{{resource.phone || 'Not provided'}}</span></p><p><b>Address</b><span>{{resource.address1 || 'Not provided'}}<ng-container *ngIf="resource.address2">, {{resource.address2}}</ng-container></span></p><p><b>City</b><span>{{resource.city || 'Not provided'}}</span></p><p><b>State</b><span>{{resource.state || 'Not provided'}}</span></p><p><b>ZIP code</b><span>{{resource.zip || 'Not provided'}}</span></p><p><b>Website</b><span><a *ngIf="resource.Url" [href]="resource.Url" target="_blank" rel="noopener noreferrer">{{resource.Url}}</a><ng-container *ngIf="!resource.Url">Not provided</ng-container></span></p></div>
+        </article>
+      </div>
+      <ng-template #noResources><div class="card calendar-empty">No resources yet. Select Add resource to create the first record.</div></ng-template>
     </section>
     <section *ngIf="view()==='content'"><p class="eyebrow">CMS</p><h2>Page content</h2><div class="content-grid"><article class="card"><h3>Editable page information</h3><p>Use the API's <code>/api/pages</code> and page-section endpoints to manage site copy, titles, and sections.</p></article><article class="card"><h3>API connection</h3><p>Content is kept in the <code>PageInfo</code> and <code>PageSection</code> tables included in your supplied schema.</p></article></div></section>
   </main>

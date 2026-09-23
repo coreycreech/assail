@@ -102,6 +102,38 @@ app.delete('/api/clients/:id', async (req, res) => {
   if (!result.affectedRows) return res.sendStatus(404);
   res.sendStatus(204);
 });
+const resourceColumns = { name: 45, phone: 15, address1: 45, address2: 45, city: 45, state: 2, zip: 15, Url: 100 };
+const resourceFields = body => Object.fromEntries(Object.entries(resourceColumns).map(([field, max]) => {
+  const value = String(body[field] ?? '').trim().slice(0, max);
+  return [field, value || null];
+}));
+app.get('/api/resources', async (_req, res) => {
+  const [rows] = await pool.query('SELECT resourceId, name, phone, address1, address2, city, state, zip, Url FROM resource ORDER BY name, resourceId');
+  res.json(rows);
+});
+app.post('/api/resources', async (req, res) => {
+  const fields = resourceFields(req.body);
+  const [result] = await pool.query('INSERT INTO resource SET ?', [fields]);
+  res.status(201).json({ resourceId: result.insertId, ...fields });
+});
+app.put('/api/resources/:id', async (req, res) => {
+  const resourceId = Number(req.params.id);
+  if (!Number.isInteger(resourceId) || resourceId < 1) return res.status(400).json({ message: 'A valid resourceId is required' });
+  const fields = resourceFields(req.body);
+  const [result] = await pool.query('UPDATE resource SET ? WHERE resourceId = ?', [fields, resourceId]);
+  if (!result.affectedRows) {
+    const [rows] = await pool.query('SELECT resourceId FROM resource WHERE resourceId = ?', [resourceId]);
+    if (!rows[0]) return res.sendStatus(404);
+  }
+  res.json({ resourceId, ...fields });
+});
+app.delete('/api/resources/:id', async (req, res) => {
+  const resourceId = Number(req.params.id);
+  if (!Number.isInteger(resourceId) || resourceId < 1) return res.status(400).json({ message: 'A valid resourceId is required' });
+  const [result] = await pool.query('DELETE FROM resource WHERE resourceId = ?', [resourceId]);
+  if (!result.affectedRows) return res.sendStatus(404);
+  res.sendStatus(204);
+});
 app.get('/api/documents', async (_req, res) => { const [rows] = await pool.query('SELECT docId, docName, clientId, filePath FROM Document ORDER BY docId DESC'); res.json(rows); });
 app.get('/api/documents/:id/download', async (req, res) => { const [rows] = await pool.query('SELECT docName, docBlob FROM Document WHERE docId = ?', [req.params.id]); if (!rows[0]) return res.sendStatus(404); res.attachment(rows[0].docName).send(rows[0].docBlob); });
 app.get('/api/documents/:id/view', async (req, res) => {

@@ -1,9 +1,9 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, CalendarEvent, ClientFields, ClientItem, DocumentItem, NewCalendarEvent } from './api.service';
+import { ApiService, CalendarEvent, ClientFields, ClientItem, DocumentItem, NewCalendarEvent, ResourceFields, ResourceItem } from './api.service';
 
-type View = 'dashboard' | 'calendar' | 'documents' | 'clients' | 'content';
+type View = 'dashboard' | 'calendar' | 'documents' | 'clients' | 'resources' | 'content';
 type AppointmentBoundary = 'start' | 'end';
 
 @Component({
@@ -37,6 +37,7 @@ export class AppComponent implements OnInit {
   events = signal<CalendarEvent[]>([]);
   documents = signal<DocumentItem[]>([]);
   clients = signal<ClientItem[]>([]);
+  resources = signal<ResourceItem[]>([]);
   online = signal(false);
   error = signal('');
   appointmentOpen = false;
@@ -49,6 +50,9 @@ export class AppComponent implements OnInit {
   clientFormOpen = false;
   editingClientId?: number;
   clientDraft: ClientFields = { clientName: '', address: '', city: '', state: '', zip: '' };
+  resourceFormOpen = false;
+  editingResourceId?: number;
+  resourceDraft: ResourceFields = { name: '', phone: '', address1: '', address2: '', city: '', state: '', zip: '', Url: '' };
   today = new Date();
   todayLabel = this.today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   upcoming = computed(() => this.events().slice(0, 4));
@@ -87,6 +91,7 @@ export class AppComponent implements OnInit {
       },
       error: () => {}
     });
+    this.api.resources().subscribe({ next: resources => this.resources.set(resources), error: () => {} });
   }
 
   setAppointmentDate(boundary: AppointmentBoundary, date: string) {
@@ -250,6 +255,64 @@ export class AppComponent implements OnInit {
         this.error.set('');
       },
       error: error => this.error.set(error.error?.message || 'Unable to delete client. Please try again.')
+    });
+  }
+
+  startCreateResource() {
+    this.editingResourceId = undefined;
+    this.resourceDraft = { name: '', phone: '', address1: '', address2: '', city: '', state: '', zip: '', Url: '' };
+    this.resourceFormOpen = true;
+    this.error.set('');
+  }
+
+  editResource(resource: ResourceItem) {
+    this.editingResourceId = resource.resourceId;
+    this.resourceDraft = {
+      name: resource.name || '', phone: resource.phone || '', address1: resource.address1 || '',
+      address2: resource.address2 || '', city: resource.city || '', state: resource.state || '',
+      zip: resource.zip || '', Url: resource.Url || ''
+    };
+    this.resourceFormOpen = true;
+    this.error.set('');
+  }
+
+  cancelResourceForm() {
+    this.resourceFormOpen = false;
+    this.editingResourceId = undefined;
+  }
+
+  saveResource() {
+    const fields: ResourceFields = {
+      name: this.resourceDraft.name?.trim() || null,
+      phone: this.resourceDraft.phone?.trim() || null,
+      address1: this.resourceDraft.address1?.trim() || null,
+      address2: this.resourceDraft.address2?.trim() || null,
+      city: this.resourceDraft.city?.trim() || null,
+      state: this.resourceDraft.state?.trim() || null,
+      zip: this.resourceDraft.zip?.trim() || null,
+      Url: this.resourceDraft.Url?.trim() || null
+    };
+    const editingId = this.editingResourceId;
+    const save = editingId === undefined ? this.api.createResource(fields) : this.api.updateResource(editingId, fields);
+    save.subscribe({
+      next: resource => {
+        this.resources.update(items => [...items.filter(item => item.resourceId !== resource.resourceId), resource]
+          .sort((a, b) => (a.name || '').localeCompare(b.name || '')));
+        this.cancelResourceForm();
+        this.error.set('');
+      },
+      error: error => this.error.set(error.error?.message || 'Unable to save resource. Please try again.')
+    });
+  }
+
+  deleteResource(resource: ResourceItem) {
+    if (!window.confirm(`Delete ${resource.name || `resource #${resource.resourceId}`}? This cannot be undone.`)) return;
+    this.api.deleteResource(resource.resourceId).subscribe({
+      next: () => {
+        this.resources.update(items => items.filter(item => item.resourceId !== resource.resourceId));
+        this.error.set('');
+      },
+      error: error => this.error.set(error.error?.message || 'Unable to delete resource. Please try again.')
     });
   }
 

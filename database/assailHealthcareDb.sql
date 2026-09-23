@@ -142,6 +142,23 @@ LOCK TABLES `PageSection` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `resource`
+--
+
+CREATE TABLE IF NOT EXISTS `resource` (
+  `resourceId` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(45) DEFAULT NULL,
+  `phone` varchar(15) DEFAULT NULL,
+  `address1` varchar(45) DEFAULT NULL,
+  `address2` varchar(45) DEFAULT NULL,
+  `city` varchar(45) DEFAULT NULL,
+  `state` varchar(2) DEFAULT NULL,
+  `zip` varchar(15) DEFAULT NULL,
+  `Url` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`resourceId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+--
 -- Table structure for table `User`
 --
 
