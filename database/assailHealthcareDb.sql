@@ -53,6 +53,8 @@ UNLOCK TABLES;
 --
 
 DROP TABLE IF EXISTS `Document`;
+DROP TABLE IF EXISTS `Billing`;
+DROP TABLE IF EXISTS `Service`;
 DROP TABLE IF EXISTS `Client`;
 CREATE TABLE `Client` (
   `clientId` int NOT NULL AUTO_INCREMENT,
@@ -62,6 +64,41 @@ CREATE TABLE `Client` (
   `state` varchar(2) DEFAULT NULL,
   `zip` varchar(15) DEFAULT NULL,
   PRIMARY KEY (`clientId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+--
+-- Table structure for table `Billing`
+--
+
+CREATE TABLE `Service` (
+  `serviceId` int NOT NULL AUTO_INCREMENT,
+  `serviceName` varchar(100) NOT NULL,
+  `billingRate` decimal(10,2) NOT NULL,
+  `description` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`serviceId`),
+  UNIQUE KEY `uq_service_serviceName` (`serviceName`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+CREATE TABLE `Billing` (
+  `billingId` int NOT NULL AUTO_INCREMENT,
+  `clientId` int NOT NULL,
+  `serviceId` int DEFAULT NULL,
+  `visitDate` date NOT NULL,
+  `startTime` time DEFAULT NULL,
+  `endTime` time DEFAULT NULL,
+  `serviceDescription` varchar(200) NOT NULL,
+  `billingCode` varchar(30) DEFAULT NULL,
+  `units` decimal(8,2) NOT NULL DEFAULT 1.00,
+  `rate` decimal(10,2) DEFAULT NULL,
+  `amount` decimal(10,2) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`billingId`),
+  KEY `idx_billing_client_visitDate` (`clientId`, `visitDate`),
+  KEY `idx_billing_serviceId` (`serviceId`),
+  CONSTRAINT `fk_billing_client` FOREIGN KEY (`clientId`) REFERENCES `Client` (`clientId`) ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT `fk_billing_service` FOREIGN KEY (`serviceId`) REFERENCES `Service` (`serviceId`) ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
 --

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 680" role="img" aria-labelledby="title">
+  <title id="title">Care plan clipboard with completed health tasks</title>
+  <circle cx="355" cy="337" r="285" fill="#00518a"/>
+  <circle cx="355" cy="337" r="246" fill="#087b9b"/>
+  <path d="M190 139a246 246 0 0 1 318 7" fill="none" stroke="#f4a51c" stroke-width="13" stroke-linecap="round"/>
+  <circle cx="356" cy="344" r="47" fill="#f4a51c" opacity=".16"/>
+  <path d="M254 183h203a22 22 0 0 1 22 22v349a22 22 0 0 1-22 22H244a22 22 0 0 1-22-22V205a22 22 0 0 1 22-22h18" fill="#13233c"/>
+  <path d="M259 214h193v317H259z" fill="#f5f7fa"/>
+  <path d="M303 179a28 28 0 0 1 28-28h48a28 28 0 0 1 28 28v21h-104z" fill="#314a6b"/>
+  <path d="M325 175h61" stroke="#f5f7fa" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="355" cy="294" r="47" fill="#e8edf2"/>
+  <path d="M355 265v58m-29-29h58" stroke="#f4a51c" stroke-width="15" stroke-linecap="round"/>
+  <g fill="#0c78b7">
+    <rect x="286" y="372" width="60" height="57" rx="3"/>
+    <rect x="286" y="458" width="60" height="57" rx="3"/>
+  </g>
+  <g fill="none" stroke="#8dc54a" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m298 399 13 13 25-28"/>
+    <path d="m298 485 13 13 25-28"/>
+  </g>
+  <g fill="#8995a8">
+    <rect x="364" y="379" width="60" height="11" rx="2"/>
+    <rect x="364" y="400" width="85" height="11" rx="2"/>
+    <rect x="364" y="466" width="60" height="11" rx="2"/>
+    <rect x="364" y="487" width="85" height="11" rx="2"/>
+  </g>
+  <g transform="rotate(19 489 394)">
+    <path d="M474 176a21 21 0 0 1 42 0v333l-21 50-21-50z" fill="#0b1e3b"/>
+    <path d="M474 229h42v256h-42z" fill="#28649a"/>
+    <path d="m474 509 21 50 21-50z" fill="#263752"/>
+    <path d="m490 548 5 11 5-11z" fill="#f4a51c"/>
+  </g>
+</svg>

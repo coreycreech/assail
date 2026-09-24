@@ -1,110 +1,43 @@
-<div class="shell">
-  <aside>
-    <div class="brand"><span class="brand-mark">&#10022;</span>assail<span>health</span></div>
-    <p class="workspace">CARE TEAM PORTAL</p>
-    <nav>
-      <button [class.active]="view()==='dashboard'" (click)="view.set('dashboard')">&#8962; <span>Overview</span></button>
-      <button [class.active]="view()==='calendar'" (click)="view.set('calendar')">&#9635; <span>Care calendar</span></button>
-      <button [class.active]="view()==='documents'" (click)="view.set('documents')">&#128196; <span>Documents</span></button>
-      <button [class.active]="view()==='clients'" (click)="view.set('clients')">&#9787; <span>Clients</span></button>
-      <button [class.active]="view()==='resources'" (click)="view.set('resources')">&#9873; <span>Resources</span></button>
-      <button [class.active]="view()==='content'" (click)="view.set('content')">&#9671; <span>Page content</span></button>
+﻿<div class="site-shell" [class.portal-shell]="!isPublicLayout()">
+  <header class="site-header" *ngIf="isPublicLayout()">
+    <a class="site-logo" routerLink="/" aria-label="Assail Health Care home"><img src="/assail-logo.svg" alt="Assail Health Care"></a>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a>
+      <a routerLink="/content" routerLinkActive="active">About Us</a>
     </nav>
-    <div class="support"><b>Need help?</b><p>Contact Assail support for care coordination assistance.</p><button>Contact support &#8594;</button></div>
-    <div class="profile"><div class="avatar">AC</div><div><b>Alex Carter</b><small>Care coordinator</small></div><span>&#8964;</span></div>
-  </aside>
-  <main>
-    <header><div><p class="eyebrow">{{todayLabel}}</p><h1>{{view()==='dashboard'?'Good morning, Alex.':(view()|titlecase)}}</h1></div><div class="status" [class.offline]="!online()"><i></i>{{online()?'System online':'Connecting'}}</div></header>
-    <p class="error" *ngIf="error()">{{error()}}</p>
-    <section *ngIf="view()==='dashboard'">
-      <div class="hero"><div><p class="eyebrow">ASSAIL HEALTHCARE</p><h2>Care that feels<br>connected.</h2><p>Bring every appointment, document, and care conversation into one calm, clear place.</p><button class="primary" (click)="view.set('calendar')">View care calendar <span>&#8594;</span></button></div><div class="hero-art"><div class="sun"></div><div class="leaf one"></div><div class="leaf two"></div><div class="leaf three"></div><div class="orb">&#9825;</div></div></div>
-      <div class="section-head"><div><p class="eyebrow">AT A GLANCE</p><h2>Today's care</h2></div><button class="text-btn" (click)="view.set('calendar')">Full calendar &#8594;</button></div>
-      <div class="grid"><article class="card metric"><span class="icon peach">&#9827;</span><p>Scheduled today</p><h3>{{events().length||0}}</h3><small>Appointments & care tasks</small></article><article class="card metric"><span class="icon mint">&#10003;</span><p>Documents</p><h3>{{documents().length}}</h3><small>Available care records</small></article><article class="card next"><p class="eyebrow">UP NEXT</p><ng-container *ngIf="upcoming()[0] as event;else noEvents"><h3>{{event.eventTitle}}</h3><p>{{event.eventStart|date:'MMM d, h:mm a'}}</p><span>{{event.eventSubject}}</span></ng-container><ng-template #noEvents><h3>No upcoming items</h3><p>Your care calendar is clear.</p></ng-template></article></div>
-    </section>
-    <section *ngIf="view()==='calendar'">
-      <div class="section-head"><div><p class="eyebrow">CARE COORDINATION</p><h2>Care calendar</h2></div><div class="action-row"><button class="text-btn" (click)="refresh()">Refresh</button><button class="primary" (click)="appointmentOpen ? cancelAppointment() : openNewAppointment()">{{appointmentOpen?'Close':'Add appointment'}}</button></div></div>
-      <form class="card appointment-form" *ngIf="appointmentOpen" (ngSubmit)="saveAppointment()">
-        <div class="form-heading wide"><span class="form-icon">+</span><div><h3>{{editingEventId === undefined ? 'New appointment' : 'Edit appointment'}}</h3><p>{{editingEventId === undefined ? 'Add the visit details and choose dates from the calendar.' : 'Update the visit details, dates, or times.'}}</p></div></div>
-        <label class="wide">Appointment title<input name="eventTitle" [(ngModel)]="newAppointment.eventTitle" required maxlength="50" placeholder="e.g. Follow-up visit"></label>
-        <label>Subject<input name="eventSubject" [(ngModel)]="newAppointment.eventSubject" required maxlength="100" placeholder="e.g. Primary care"></label>
-        <label>Repeats<select name="recurrenceRule" [(ngModel)]="newAppointment.recurrenceRule"><option value="">Does not repeat</option><option value="DAILY">Daily</option><option value="WEEKLY">Weekly</option><option value="MONTHLY">Monthly</option><option value="YEARLY">Yearly</option></select></label>
-        <fieldset class="date-card">
-          <legend>Starts</legend>
-          <label>Date<input name="startDate" [ngModel]="newAppointment.eventStart.slice(0, 10)" (ngModelChange)="setAppointmentDate('start', $event)" required type="date" aria-label="Start date"></label>
-          <label>Time<input name="startTime" [ngModel]="newAppointment.eventStart.slice(11, 16)" (ngModelChange)="setAppointmentTime('start', $event)" required type="time" aria-label="Start time"></label>
-        </fieldset>
-        <fieldset class="date-card">
-          <legend>Ends</legend>
-          <label>Date<input name="endDate" [ngModel]="newAppointment.eventEnd.slice(0, 10)" (ngModelChange)="setAppointmentDate('end', $event)" required type="date" aria-label="End date"></label>
-          <label>Time<input name="endTime" [ngModel]="newAppointment.eventEnd.slice(11, 16)" (ngModelChange)="setAppointmentTime('end', $event)" required type="time" aria-label="End time"></label>
-        </fieldset>
-        <label class="wide">Notes<textarea name="eventDetail" [(ngModel)]="newAppointment.eventDetail" required maxlength="300" placeholder="Add details to help everyone prepare"></textarea></label>
-        <label class="check wide"><input name="isAllDay" [(ngModel)]="newAppointment.isAllDay" type="checkbox"> This is an all-day appointment</label>
-        <div class="wide form-actions"><span>Complete the title, subject, dates, times, and notes. Repeats is optional.</span><div><button type="button" class="text-btn cancel" (click)="cancelAppointment()">Cancel</button><button class="primary" type="submit">{{editingEventId === undefined ? 'Save appointment' : 'Save changes'}}</button></div></div>
-      </form>
-      <div class="card table-card"><div class="calendar-empty" *ngIf="!events().length">No events yet. Select Add appointment to create the first one.</div><div class="event" *ngFor="let e of events()"><div class="date"><b>{{e.eventStart|date:'d'}}</b><span>{{e.eventStart|date:'MMM'}}</span></div><div class="event-info"><h3>{{e.eventTitle}}</h3><p>{{e.eventSubject}} · {{e.eventStart|date:'h:mm a'}} – {{e.eventEnd|date:'h:mm a'}}</p><small>{{e.eventDetail}}</small></div><span class="event-tag">{{e.isBlock?'Blocked':'Scheduled'}}</span><div class="event-actions"><button type="button" class="event-action" (click)="editEvent(e)" [attr.aria-label]="'Edit '+e.eventTitle">Edit</button><button type="button" class="event-action delete-event" (click)="deleteEvent(e)" [attr.aria-label]="'Delete '+e.eventTitle">Delete</button></div></div></div>
-    </section>
-    <section *ngIf="view()==='documents'">
-      <div class="section-head"><div><p class="eyebrow">SHARED RECORDS</p><h2>Documents</h2></div></div>
-      <div class="card upload-panel">
-        <div class="upload-intro"><span class="upload-icon">&#8682;</span><div><p class="eyebrow">ADD TO CLIENT RECORD</p><h3>Upload a document</h3><p>Follow the two steps below. Your file is saved to the database and appears in the document list.</p></div></div>
-        <div class="upload-steps">
-          <div class="upload-step"><span class="step-number">1</span><div class="step-body"><b>Choose a document</b><p>PDF, Word, text, or image file up to 10 MB</p><label class="file-picker">Choose file<input type="file" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx,.txt" (change)="chooseFile($event)"></label></div></div>
-          <div class="upload-step"><span class="step-number">2</span><div class="step-body"><label class="client-label">Client record<select class="client-select" name="clientId" [(ngModel)]="clientId"><option [ngValue]="null" disabled>Select a client</option><option *ngFor="let client of clients()" [ngValue]="client.clientId">{{client.clientName}} (ID #{{client.clientId}})</option></select></label><p class="step-hint">Choose which client record should hold this document.</p><button type="button" class="add-client-toggle" (click)="clientCreationOpen=!clientCreationOpen">{{clientCreationOpen ? 'Cancel adding client' : '+ Add a client'}}</button><div class="client-create" *ngIf="clientCreationOpen"><label class="client-label">Client name<input name="newClientName" [(ngModel)]="newClientName" maxlength="45" required placeholder="e.g. Jordan Lee"></label><p class="step-hint">The client ID will be assigned automatically.</p><button type="button" class="primary save-client" [disabled]="!newClientName.trim()" (click)="addClient()">Save client</button></div><p class="step-hint" *ngIf="!clients().length">Add a client before uploading a document.</p></div></div>
-        </div>
-        <div class="upload-footer"><div class="selected-file" [class.has-file]="!!selectedFile" aria-live="polite"><span class="file-status-icon">{{selectedFile ? 'Ready' : 'Waiting'}}</span><span>{{selectedFile?.name || 'No file selected yet'}}</span></div><button class="primary upload-button" [disabled]="!selectedFile || !clientId" (click)="upload()">Upload document</button></div>
-        <p class="upload-note">Choose a file and select a client to enable the upload button. PDFs, images, and text files can be previewed; other files can be downloaded.</p>
+    <a class="header-contact home-admin-button" *ngIf="!auth.currentUser()" routerLink="/login"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1"/></svg>Admin</a>
+    <a class="header-contact home-admin-button" *ngIf="auth.currentUser()" routerLink="/admin/content"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1"/></svg>Admin</a>
+  </header>
+
+  <div class="portal-layout" [class.public-layout]="isPublicLayout()">
+    <aside class="portal-sidebar" *ngIf="!isPublicLayout()">
+      <a class="portal-logo" routerLink="/" aria-label="Assail Health Care home"><img src="/assail-logo.svg" alt="Assail Health Care"></a>
+      <p class="portal-label">CARE TEAM PORTAL</p>
+      <nav class="portal-nav" aria-label="Care team pages">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}"><span class="portal-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Overview</a>
+        <a routerLink="/calendar" routerLinkActive="active"><span class="portal-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg></span>Care calendar</a>
+        <a routerLink="/billing" routerLinkActive="active"><span class="portal-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 13h3M8 16h6M16 13h2"/></svg></span>Billing</a>
+        <a routerLink="/services" routerLinkActive="active"><span class="portal-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/></svg></span>Services</a>
+        <a routerLink="/documents" routerLinkActive="active"><span class="portal-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 12h6M9 16h6"/></svg></span>Documents</a>
+        <a routerLink="/clients" routerLinkActive="active"><span class="portal-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c.4-3.4 2.5-5 6-5s5.6 1.6 6 5M16 5.5a3 3 0 0 1 0 5.8M17 15c2.2.4 3.5 2 4 4"/></svg></span>Clients</a>
+        <a routerLink="/resources" routerLinkActive="active"><span class="portal-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/></svg></span>Resources</a>
+        <a routerLink="/admin/content" routerLinkActive="active"><span class="portal-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3h14v18H5zM8 8h8M8 12h8M8 16h5"/></svg></span>Page content</a>
+      </nav>
+      <div class="portal-sidebar-bottom">
+        <div class="portal-user"><span class="portal-avatar">{{auth.currentUser()?.firstName?.charAt(0) || 'A'}}</span><span><b>{{auth.currentUser()?.firstName || auth.currentUser()?.userName || 'Care team'}}</b><small>{{auth.currentUser() ? 'Signed in' : 'Care coordinator'}}</small></span></div>
+        <button type="button" class="logout-button" *ngIf="auth.currentUser()" (click)="logout()">Sign out</button>
+        <a class="logout-button login-link" *ngIf="!auth.currentUser()" routerLink="/login">Sign in</a>
       </div>
-      <div class="card table-card"><div class="document" *ngFor="let d of documents()"><span class="doc-icon">&#128196;</span><div class="document-info"><h3>{{d.docName}}</h3><p>Client #{{d.clientId}}</p></div><a *ngIf="canPreviewDocument(d)" [href]="'http://localhost:3000/api/documents/'+d.docId+'/view'" target="_blank" rel="noopener noreferrer">View</a><span class="preview-unavailable" *ngIf="!canPreviewDocument(d)">Preview unavailable</span><a [href]="'http://localhost:3000/api/documents/'+d.docId+'/download'">Download</a><button class="delete" (click)="removeDocument(d.docId)">Remove</button></div><div class="calendar-empty" *ngIf="!documents().length">No documents have been uploaded yet. Choose a file above to add one.</div></div>
-    </section>
-    <section *ngIf="view()==='clients'">
-      <div class="section-head"><div><p class="eyebrow">CLIENT DIRECTORY</p><h2>Clients</h2></div><button class="primary" (click)="clientFormOpen ? cancelClientForm() : startCreateClient()">{{clientFormOpen ? 'Close' : 'Add client'}}</button></div>
-      <form class="card client-form" *ngIf="clientFormOpen" (ngSubmit)="saveClient()">
-        <div class="form-heading wide"><span class="form-icon">+</span><div><h3>{{editingClientId === undefined ? 'Add a client' : 'Edit client'}}</h3><p>Enter the client's details for the care record.</p></div></div>
-        <p class="wide client-id-note" *ngIf="editingClientId === undefined">Client ID will be assigned automatically when you save.</p>
-        <p class="wide client-id-note" *ngIf="editingClientId !== undefined">Client ID: #{{editingClientId}} (cannot be changed)</p>
-        <label>Client name<input name="clientName" [(ngModel)]="clientDraft.clientName" maxlength="45" required placeholder="Client name"></label>
-        <label class="wide">Address<input name="address" [(ngModel)]="clientDraft.address" maxlength="45" placeholder="Street address"></label>
-        <label>City<input name="city" [(ngModel)]="clientDraft.city" maxlength="45" placeholder="City"></label>
-        <label>State<select name="state" [(ngModel)]="clientDraft.state">
-          <option value="">Select a state</option>
-          <option *ngFor="let state of usStates" [value]="state.code">{{state.name}} ({{state.code}})</option>
-        </select></label>
-        <label>ZIP code<input name="zip" [(ngModel)]="clientDraft.zip" maxlength="15" placeholder="ZIP code"></label>
-        <div class="wide form-actions"><span>Client ID is automatically generated and cannot be changed.</span><div><button type="button" class="text-btn cancel" (click)="cancelClientForm()">Cancel</button><button class="primary" type="submit">{{editingClientId === undefined ? 'Save client' : 'Save changes'}}</button></div></div>
-      </form>
-      <div class="client-list" *ngIf="clients().length; else noClients">
-        <article class="card client-record" *ngFor="let client of clients()">
-          <div class="client-record-heading"><div><p class="eyebrow">CLIENT #{{client.clientId}}</p><h3>{{client.clientName}}</h3></div><div class="client-record-actions"><button type="button" class="event-action" (click)="editClient(client)">Edit</button><button type="button" class="event-action delete-event" (click)="deleteClientRecord(client)">Delete</button></div></div>
-          <div class="client-details"><p><b>Address</b><span>{{client.address || 'Not provided'}}</span></p><p><b>City</b><span>{{client.city || 'Not provided'}}</span></p><p><b>State</b><span>{{client.state || 'Not provided'}}</span></p><p><b>ZIP code</b><span>{{client.zip || 'Not provided'}}</span></p></div>
-        </article>
-      </div>
-      <ng-template #noClients><div class="card calendar-empty">No clients yet. Select Add client to create the first record.</div></ng-template>
-    </section>
-    <section *ngIf="view()==='resources'">
-      <div class="section-head"><div><p class="eyebrow">CARE DIRECTORY</p><h2>Resources</h2></div><button class="primary" (click)="resourceFormOpen ? cancelResourceForm() : startCreateResource()">{{resourceFormOpen ? 'Close' : 'Add resource'}}</button></div>
-      <form class="card client-form resource-form" *ngIf="resourceFormOpen" (ngSubmit)="saveResource()">
-        <div class="form-heading wide"><span class="form-icon">+</span><div><h3>{{editingResourceId === undefined ? 'Add a resource' : 'Edit resource'}}</h3><p>Enter contact details for a care resource. All fields are optional.</p></div></div>
-        <p class="wide client-id-note" *ngIf="editingResourceId === undefined">Resource ID will be assigned automatically when you save.</p>
-        <p class="wide client-id-note" *ngIf="editingResourceId !== undefined">Resource ID: #{{editingResourceId}} (cannot be changed)</p>
-        <label>Name<input name="resourceName" [(ngModel)]="resourceDraft.name" maxlength="45" placeholder="Resource name"></label>
-        <label>Phone<input name="resourcePhone" [(ngModel)]="resourceDraft.phone" maxlength="15" type="tel" placeholder="Phone number"></label>
-        <label class="wide">Address line 1<input name="address1" [(ngModel)]="resourceDraft.address1" maxlength="45" placeholder="Street address"></label>
-        <label class="wide">Address line 2<input name="address2" [(ngModel)]="resourceDraft.address2" maxlength="45" placeholder="Suite, unit, etc."></label>
-        <label>City<input name="resourceCity" [(ngModel)]="resourceDraft.city" maxlength="45" placeholder="City"></label>
-        <label>State<input name="resourceState" [(ngModel)]="resourceDraft.state" maxlength="2" placeholder="Two-letter state"></label>
-        <label>ZIP code<input name="resourceZip" [(ngModel)]="resourceDraft.zip" maxlength="15" placeholder="ZIP code"></label>
-        <label>Website URL<input name="resourceUrl" [(ngModel)]="resourceDraft.Url" maxlength="100" type="url" placeholder="https://example.com"></label>
-        <div class="wide form-actions"><span>Resource ID is automatically generated.</span><div><button type="button" class="text-btn cancel" (click)="cancelResourceForm()">Cancel</button><button class="primary" type="submit">{{editingResourceId === undefined ? 'Save resource' : 'Save changes'}}</button></div></div>
-      </form>
-      <div class="client-list" *ngIf="resources().length; else noResources">
-        <article class="card client-record" *ngFor="let resource of resources()">
-          <div class="client-record-heading"><div><p class="eyebrow">RESOURCE #{{resource.resourceId}}</p><h3>{{resource.name || 'Unnamed resource'}}</h3></div><div class="client-record-actions"><button type="button" class="event-action" (click)="editResource(resource)">Edit</button><button type="button" class="event-action delete-event" (click)="deleteResource(resource)">Delete</button></div></div>
-          <div class="client-details resource-details"><p><b>Phone</b><span>{{resource.phone || 'Not provided'}}</span></p><p><b>Address</b><span>{{resource.address1 || 'Not provided'}}<ng-container *ngIf="resource.address2">, {{resource.address2}}</ng-container></span></p><p><b>City</b><span>{{resource.city || 'Not provided'}}</span></p><p><b>State</b><span>{{resource.state || 'Not provided'}}</span></p><p><b>ZIP code</b><span>{{resource.zip || 'Not provided'}}</span></p><p><b>Website</b><span><a *ngIf="resource.Url" [href]="resource.Url" target="_blank" rel="noopener noreferrer">{{resource.Url}}</a><ng-container *ngIf="!resource.Url">Not provided</ng-container></span></p></div>
-        </article>
-      </div>
-      <ng-template #noResources><div class="card calendar-empty">No resources yet. Select Add resource to create the first record.</div></ng-template>
-    </section>
-    <section *ngIf="view()==='content'"><p class="eyebrow">CMS</p><h2>Page content</h2><div class="content-grid"><article class="card"><h3>Editable page information</h3><p>Use the API's <code>/api/pages</code> and page-section endpoints to manage site copy, titles, and sections.</p></article><article class="card"><h3>API connection</h3><p>Content is kept in the <code>PageInfo</code> and <code>PageSection</code> tables included in your supplied schema.</p></article></div></section>
-  </main>
+    </aside>
+    <main class="site-main" [class.portal-main]="!isPublicLayout()" [class.home-main]="isHomePage()"><router-outlet></router-outlet></main>
+  </div>
+
+  <footer class="site-footer">
+      <div class="footer-top">
+      <div class="footer-brand"><a class="site-logo" routerLink="/" aria-label="Assail Health Care home"><img src="/assail-logo.svg" alt="Assail Health Care"></a><p>Compassionate care, connected around you.</p><span class="connection"><i [class.is-online]="online()"></i>{{online() ? 'Care services connected' : 'Connecting to care services'}}</span></div>
+      <div class="footer-links"><h2>Explore</h2><a routerLink="/">Home</a><a routerLink="/calendar">Care calendar</a><a routerLink="/billing">Billing worksheet</a><a routerLink="/services">Billing services</a><a routerLink="/documents">Documents</a><a routerLink="/resources">Care resources</a></div>
+      <div class="footer-links"><h2>Get in touch</h2><a routerLink="/content">About Assail</a><a routerLink="/clients">Client directory</a><p>Here to help you coordinate care.</p></div>
+    </div>
+    <div class="footer-bottom"><span>Â© {{currentYear}} Assail Healthcare</span><span>Care that keeps everyone connected.</span></div>
+  </footer>
 </div>
