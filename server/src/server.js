@@ -3,15 +3,39 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import bcrypt from 'bcryptjs';
-import { extname } from 'node:path';
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { extname, resolve } from 'node:path';
+import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { mkdir, readdir } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { pool } from './db.js';
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const sectionImageDirectory = resolve(fileURLToPath(new URL('../uploads/page-sections/', import.meta.url)));
+const publicImageDirectory = resolve(fileURLToPath(new URL('../../client/public/', import.meta.url)));
+const sectionImageExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
+const sectionImageUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, callback) => mkdir(sectionImageDirectory, { recursive: true }).then(() => callback(null, sectionImageDirectory), callback),
+    filename: (_req, file, callback) => callback(null, `${randomUUID()}${extname(file.originalname).toLowerCase()}`)
+  }),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, callback) => {
+    const expectedTypes = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif' };
+    const extension = extname(file.originalname).toLowerCase();
+    if (!sectionImageExtensions.has(extension) || expectedTypes[extension] !== file.mimetype) {
+      const error = new Error('Upload a PNG, JPEG, WebP, or GIF image.'); error.status = 400; callback(error); return;
+    }
+    callback(null, true);
+  }
+});
 const authTokenSecret = process.env.AUTH_TOKEN_SECRET || randomBytes(32).toString('hex');
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:4200' }));
 app.use(express.json({ limit: '1mb' }));
+app.use('/uploads/page-sections', express.static(sectionImageDirectory, {
+  dotfiles: 'deny', maxAge: '1d',
+  setHeaders: response => response.setHeader('X-Content-Type-Options', 'nosniff')
+}));
 const pick = (source, keys) => Object.fromEntries(keys.map(k => [k, source[k]]));
 const toBit = value => (value === true || value === 1 || value === '1' || value === 'true') ? 1 : 0;
 const issueAuthToken = user => {
@@ -90,24 +114,55 @@ const pageFieldsFrom = body => {
   const name = String(body.name ?? '').trim();
   const title = String(body.title ?? '').trim();
   const information = String(body.information ?? '').trim();
-  if (!name || name.length > 30 || !title || title.length > 50 || information.length > 500) {
-    const error = new Error('Page name, title, or information is missing or exceeds its maximum length.'); error.status = 400; throw error;
+  const servicesIntro = String(body.servicesIntro ?? '').trim();
+  if (!name || name.length > 30 || !title || title.length > 50 || information.length > 500 || servicesIntro.length > 500) {
+    const error = new Error('Page name, title, or page text is missing or exceeds its maximum length.'); error.status = 400; throw error;
   }
-  return { name, title, information };
+  return { name, title, information, servicesIntro };
 };
 const sectionFieldsFrom = body => {
   const sectionTitle = String(body.sectionTitle ?? '').trim();
   const sectionInfo = String(body.sectionInfo ?? '').trim();
-  if (!sectionTitle || sectionTitle.length > 50 || sectionInfo.length > 500) {
-    const error = new Error('Section title or information is missing or exceeds its maximum length.'); error.status = 400; throw error;
+  const imageLocation = String(body.imageLocation ?? '').trim();
+  const isLocalPath = imageLocation.startsWith('/') && !imageLocation.startsWith('//');
+  const isWebUrl = /^https?:\/\/\S+$/i.test(imageLocation);
+  if (!sectionTitle || sectionTitle.length > 50 || sectionInfo.length > 500 || imageLocation.length > 500 || (imageLocation && !isLocalPath && !isWebUrl)) {
+    const error = new Error('Section title, text, or image location is invalid or exceeds its maximum length. Use a site path or an HTTP/HTTPS image URL.'); error.status = 400; throw error;
   }
-  return { sectionTitle, sectionInfo };
+  return { sectionTitle, sectionInfo, imageLocation: imageLocation || null };
 };
-app.get('/api/pages', async (_req, res) => { const [rows] = await pool.query('SELECT pageId, TRIM(name) AS name, TRIM(title) AS title, information FROM PageInfo ORDER BY name'); res.json(rows); });
+app.get('/api/pages', async (_req, res) => { const [rows] = await pool.query('SELECT pageId, TRIM(name) AS name, TRIM(title) AS title, information, servicesIntro FROM PageInfo ORDER BY name'); res.json(rows); });
+app.get('/api/page-section-images', requireAuth, async (req, res) => {
+  const listedImages = [];
+  const pickerExtensions = new Set([...sectionImageExtensions, '.svg']);
+  const readImages = async (directory, makeLocation, source) => {
+    let entries = [];
+    try { entries = await readdir(directory, { withFileTypes: true }); }
+    catch (error) { if (error.code !== 'ENOENT') throw error; }
+    for (const entry of entries) {
+      const extension = extname(entry.name).toLowerCase();
+      if (entry.isFile() && pickerExtensions.has(extension)) listedImages.push({ fileName: entry.name, imageLocation: makeLocation(entry.name), source });
+    }
+  };
+  await readImages(publicImageDirectory, name => `/${encodeURIComponent(name)}`, 'site');
+  const origin = `${req.protocol}://${req.get('host')}`;
+  await readImages(sectionImageDirectory, name => `${origin}/uploads/page-sections/${encodeURIComponent(name)}`, 'uploaded');
+  listedImages.sort((left, right) => left.fileName.localeCompare(right.fileName));
+  res.json(listedImages);
+});
+app.post('/api/page-section-images', requireAuth, sectionImageUpload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'Choose an image file to upload.' });
+  const origin = `${req.protocol}://${req.get('host')}`;
+  res.status(201).json({
+    fileName: req.file.filename,
+    imageLocation: `${origin}/uploads/page-sections/${encodeURIComponent(req.file.filename)}`,
+    source: 'uploaded'
+  });
+});
 app.get('/api/pages/:id/sections', async (req, res) => {
   const pageId = Number(req.params.id);
   if (!Number.isInteger(pageId) || pageId < 1) return res.status(400).json({ message: 'A valid pageId is required.' });
-  const [rows] = await pool.query('SELECT sectionId, pageId, TRIM(sectionTitle) AS sectionTitle, sectionInfo FROM PageSection WHERE pageId = ? ORDER BY sectionId', [pageId]);
+  const [rows] = await pool.query('SELECT sectionId, pageId, TRIM(sectionTitle) AS sectionTitle, sectionInfo, imageLocation FROM PageSection WHERE pageId = ? ORDER BY sectionId', [pageId]);
   res.json(rows);
 });
 app.post('/api/pages', requireAuth, async (req, res) => {
@@ -132,7 +187,7 @@ app.post('/api/pages/:id/sections', requireAuth, async (req, res) => {
   const [pages] = await pool.query('SELECT pageId FROM PageInfo WHERE pageId = ?', [pageId]);
   if (!pages[0]) return res.sendStatus(404);
   const fields = sectionFieldsFrom(req.body);
-  const [result] = await pool.query('INSERT INTO PageSection SET ?', { ...fields, pageId });
+  const [result] = await pool.query('INSERT INTO PageSection SET ?', [{ ...fields, pageId }]);
   res.status(201).json({ sectionId: result.insertId, pageId, ...fields });
 });
 app.put('/api/sections/:id', requireAuth, async (req, res) => {
@@ -382,11 +437,12 @@ app.post('/api/auth/login', async (req, res) => { const [rows] = await pool.quer
 
 app.use((err, _req, res, _next) => {
   console.error(err);
+  const status = err.status || (err.code === 'LIMIT_FILE_SIZE' ? 413 : err.code?.startsWith('LIMIT_') ? 400 : 500);
   const message = err.status
     ? err.message
     : process.env.NODE_ENV === 'production'
       ? 'Something went wrong.'
       : err.sqlMessage || err.message;
-  res.status(err.status || 500).json({ message });
+  res.status(status).json({ message });
 });
 app.listen(process.env.PORT || 3000, () => console.log('Assail API listening'));

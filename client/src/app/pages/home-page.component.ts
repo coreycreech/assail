@@ -15,12 +15,14 @@ import { ApiService, PageInfo, PageSection } from '../api.service';
         </div>
         <img class="home-illustration" src="/assail-home-clipboard.svg" alt="" aria-hidden="true">
       </div>
-      <section id="about" class="home-highlights" *ngIf="sections().length">
+      <section id="about" class="home-highlights" *ngIf="servicesIntro() || sections().length">
         <p class="eyebrow">ASSAIL HEALTH CARE</p>
-        <h2>Care built around you</h2>
-        <div class="home-highlight-grid">
-          <article class="card home-highlight" *ngFor="let section of sections()">
-            <span class="home-highlight-mark" aria-hidden="true">+</span>
+        <h2>Our Services</h2>
+        <p class="home-services-intro" *ngIf="servicesIntro()">{{servicesIntro()}}</p>
+        <div class="home-section-list">
+          <article class="home-section-item" *ngFor="let section of sections(); let i = index">
+            <img class="home-section-image" *ngIf="section.imageLocation" [src]="section.imageLocation" [alt]="section.sectionTitle">
+            <span class="home-section-number" *ngIf="!section.imageLocation" aria-hidden="true">{{i + 1}}</span>
             <div><h3>{{section.sectionTitle}}</h3><p>{{section.sectionInfo}}</p></div>
           </article>
         </div>
@@ -30,6 +32,7 @@ import { ApiService, PageInfo, PageSection } from '../api.service';
 export class HomePageComponent implements OnInit {
   title = signal('Health care created with you in mind');
   information = signal('We bring care, appointments, and trusted resources together in a clear, accessible experience designed around you.');
+  servicesIntro = signal('');
   sections = signal<PageSection[]>([]);
 
   constructor(private api: ApiService) {}
@@ -41,6 +44,7 @@ export class HomePageComponent implements OnInit {
         if (!home) return;
         this.title.set(home.title.trim());
         this.information.set(home.information);
+        this.servicesIntro.set(home.servicesIntro || '');
         this.api.pageSections(home.pageId).subscribe({ next: sections => this.sections.set(sections), error: () => this.sections.set([]) });
       },
       error: () => {}

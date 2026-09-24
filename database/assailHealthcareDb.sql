@@ -140,6 +140,7 @@ CREATE TABLE `PageInfo` (
   `name` char(30) NOT NULL,
   `title` char(50) NOT NULL,
   `information` varchar(500) NOT NULL,
+  `servicesIntro` varchar(500) NOT NULL DEFAULT '',
   PRIMARY KEY (`pageId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -163,6 +164,7 @@ DROP TABLE IF EXISTS `PageSection`;
 CREATE TABLE `PageSection` (
   `sectionId` int NOT NULL AUTO_INCREMENT,
   `sectionInfo` varchar(500) NOT NULL,
+  `imageLocation` varchar(500) DEFAULT NULL,
   `sectionTitle` char(50) NOT NULL,
   `pageId` int NOT NULL,
   PRIMARY KEY (`sectionId`)
