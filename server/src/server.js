@@ -11,8 +11,10 @@ import { pool } from './db.js';
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
-const sectionImageDirectory = resolve(fileURLToPath(new URL('../uploads/page-sections/', import.meta.url)));
+const sectionImageDirectory = resolve(fileURLToPath(new URL('../../public/assets/page-sections/', import.meta.url)));
 const publicImageDirectory = resolve(fileURLToPath(new URL('../../client/public/', import.meta.url)));
+const clientBuildDirectory = resolve(fileURLToPath(new URL('../../client/dist/assail-healthcare-ui/browser/', import.meta.url)));
+const uploadedSectionImageUrl = name => `/uploads/page-sections/${encodeURIComponent(name)}`;
 const sectionImageExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
 const sectionImageUpload = multer({
   storage: multer.diskStorage({
@@ -30,6 +32,7 @@ const sectionImageUpload = multer({
   }
 });
 const authTokenSecret = process.env.AUTH_TOKEN_SECRET || randomBytes(32).toString('hex');
+app.set('trust proxy', 1);
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:4200' }));
 app.use(express.json({ limit: '1mb' }));
 app.use('/uploads/page-sections', express.static(sectionImageDirectory, {
@@ -145,17 +148,15 @@ app.get('/api/page-section-images', requireAuth, async (req, res) => {
     }
   };
   await readImages(publicImageDirectory, name => `/${encodeURIComponent(name)}`, 'site');
-  const origin = `${req.protocol}://${req.get('host')}`;
-  await readImages(sectionImageDirectory, name => `${origin}/uploads/page-sections/${encodeURIComponent(name)}`, 'uploaded');
+  await readImages(sectionImageDirectory, uploadedSectionImageUrl, 'uploaded');
   listedImages.sort((left, right) => left.fileName.localeCompare(right.fileName));
   res.json(listedImages);
 });
 app.post('/api/page-section-images', requireAuth, sectionImageUpload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'Choose an image file to upload.' });
-  const origin = `${req.protocol}://${req.get('host')}`;
   res.status(201).json({
     fileName: req.file.filename,
-    imageLocation: `${origin}/uploads/page-sections/${encodeURIComponent(req.file.filename)}`,
+    imageLocation: uploadedSectionImageUrl(req.file.filename),
     source: 'uploaded'
   });
 });
@@ -163,7 +164,10 @@ app.get('/api/pages/:id/sections', async (req, res) => {
   const pageId = Number(req.params.id);
   if (!Number.isInteger(pageId) || pageId < 1) return res.status(400).json({ message: 'A valid pageId is required.' });
   const [rows] = await pool.query('SELECT sectionId, pageId, TRIM(sectionTitle) AS sectionTitle, sectionInfo, imageLocation FROM PageSection WHERE pageId = ? ORDER BY sectionId', [pageId]);
-  res.json(rows);
+  res.json(rows.map(row => ({
+    ...row,
+    imageLocation: row.imageLocation?.replace(/^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?(?=\/uploads\/page-sections\/)/i, '')
+  })));
 });
 app.post('/api/pages', requireAuth, async (req, res) => {
   const fields = pageFieldsFrom(req.body);
@@ -434,6 +438,12 @@ app.post('/api/documents', upload.single('file'), async (req, res) => { if (!req
 app.delete('/api/documents/:id', async (req, res) => { await pool.query('DELETE FROM Document WHERE docId = ?', [req.params.id]); res.sendStatus(204); });
 
 app.post('/api/auth/login', async (req, res) => { const [rows] = await pool.query('SELECT userId, userName, password, userTypeId, email, firstName, lastName FROM User WHERE userName = ?', [req.body.userName]); const user = rows[0]; const valid = user && (user.password.startsWith('$2') ? await bcrypt.compare(req.body.password || '', user.password) : user.password === req.body.password); if (!valid) return res.status(401).json({ message: 'Invalid credentials' }); delete user.password; res.json({ user, token: issueAuthToken(user) }); });
+
+app.use(express.static(clientBuildDirectory));
+app.get('*', (req, res, next) => {
+  if (req.path === '/api' || req.path.startsWith('/api/') || req.path === '/uploads' || req.path.startsWith('/uploads/')) return next();
+  res.sendFile(resolve(clientBuildDirectory, 'index.html'), error => { if (error) next(error); });
+});
 
 app.use((err, _req, res, _next) => {
   console.error(err);
