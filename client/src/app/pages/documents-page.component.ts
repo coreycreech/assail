@@ -18,7 +18,7 @@ import { ApiService, ClientFields, ClientItem, DocumentItem } from '../api.servi
         <div class="upload-footer"><div class="selected-file" [class.has-file]="!!selectedFile" aria-live="polite"><span class="file-status-icon">{{selectedFile ? 'Ready' : 'Waiting'}}</span><span>{{selectedFile?.name || 'No file selected yet'}}</span></div><button type="button" class="primary upload-button" [disabled]="!selectedFile || !clientId" (click)="upload()">Upload document</button></div>
         <p class="upload-note">Choose a file and select a client to enable the upload button. PDFs, images, and text files can be previewed; other files can be downloaded.</p>
       </div>
-      <div class="card table-card"><div class="document" *ngFor="let d of documents()"><span class="doc-icon">&#128196;</span><div class="document-info"><h3>{{d.docName}}</h3><p>Client #{{d.clientId}}</p></div><a *ngIf="canPreviewDocument(d)" [href]="'http://localhost:3000/api/documents/'+d.docId+'/view'" target="_blank" rel="noopener noreferrer">View</a><span class="preview-unavailable" *ngIf="!canPreviewDocument(d)">Preview unavailable</span><a [href]="'http://localhost:3000/api/documents/'+d.docId+'/download'">Download</a><button type="button" class="delete" (click)="removeDocument(d.docId)">Remove</button></div><div class="calendar-empty" *ngIf="!documents().length">No documents have been uploaded yet. Choose a file above to add one.</div></div>
+      <div class="card table-card"><div class="document" *ngFor="let d of documents()"><span class="doc-icon">&#128196;</span><div class="document-info"><h3>{{d.docName}}</h3><p>Client #{{d.clientId}}</p></div><a *ngIf="canPreviewDocument(d)" [href]="api.url+'/documents/'+d.docId+'/view'" target="_blank" rel="noopener noreferrer">View</a><span class="preview-unavailable" *ngIf="!canPreviewDocument(d)">Preview unavailable</span><a [href]="api.url+'/documents/'+d.docId+'/download'">Download</a><button type="button" class="delete" (click)="removeDocument(d.docId)">Remove</button></div><div class="calendar-empty" *ngIf="!documents().length">No documents have been uploaded yet. Choose a file above to add one.</div></div>
     </section>`
 })
 export class DocumentsPageComponent implements OnInit {
@@ -30,7 +30,7 @@ export class DocumentsPageComponent implements OnInit {
   newClientName = '';
   selectedFile?: File;
   private documentFileInput?: HTMLInputElement;
-  constructor(private api: ApiService) {}
+  constructor(public api: ApiService) {}
   ngOnInit() {
     this.refreshDocuments();
     this.api.clients().subscribe({ next: clients => { this.clients.set(clients); if (!clients.some(client => client.clientId === this.clientId)) this.clientId = clients[0]?.clientId ?? null; }, error: () => this.error.set('Unable to load clients.') });
