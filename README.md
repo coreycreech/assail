@@ -17,9 +17,9 @@ Open `http://localhost:4200`. The API runs on `http://localhost:3000`.
 
 For production, run `npm.cmd run build`, then `npm.cmd start` (use `npm` on Linux). The Express server serves both the built frontend and `/api` on `PORT`, defaulting to 3000. Configure the hosting web server to forward the site's requests to this Node process. Uploading only the frontend files does not provide the login API.
 
-The server loads `server/.env` regardless of the startup working directory. Environment variables supplied by the hosting platform take precedence.
+For local development, the server loads `server/.env` regardless of the startup working directory. Existing environment variables take precedence.
 
-For external MySQL on GoDaddy Node.js Hosting, configure `ASSAIL_DB_HOST`, `ASSAIL_DB_PORT`, `ASSAIL_DB_USER`, `ASSAIL_DB_PASSWORD`, and `ASSAIL_DB_NAME` as hosting secrets. Set the name to `assailHealthcare` and use the external server's connection details. When any `ASSAIL_DB_*` setting exists, the app uses that group exclusively and requires host, user, password, and name; it does not mix in hosting-provided `DB_*` values. Local development continues to use `DB_*` when no `ASSAIL_DB_*` settings exist. Deploy this code and the secrets to preview, verify login, then publish to live.
+On GoDaddy Node.js Hosting, use the attached hosted database's injected `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME` settings. With `NODE_ENV=production`, the app does not load `server/.env` and requires database host, user, password, and name in the environment. Legacy `ASSAIL_DB_*` settings are ignored. Configure a stable `AUTH_TOKEN_SECRET` in hosting secrets. The startup diagnostic identifies this configuration as `hosted-db-v2` and logs the selected host, port, and database without credentials. Deploy to preview, verify login, then publish to live.
 
 ## API
 

@@ -2,20 +2,23 @@ import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'node:url';
 
-dotenv.config({ path: fileURLToPath(new URL('../.env', import.meta.url)) });
+const production = process.env.NODE_ENV === 'production';
+if (!production) {
+  dotenv.config({ path: fileURLToPath(new URL('../.env', import.meta.url)) });
+}
 
-// Keep external credentials separate from hosting-provided DB_* settings.
-const external = Object.keys(process.env).some(key => key.startsWith('ASSAIL_DB_'));
-const prefix = external ? 'ASSAIL_DB_' : 'DB_';
-if (external) {
+// Production uses only the hosting environment, never bundled local settings.
+const prefix = 'DB_';
+if (production) {
   for (const key of ['HOST', 'USER', 'PASSWORD', 'NAME']) {
     if (!process.env[`${prefix}${key}`]) {
-      throw new Error(`Missing required external database setting: ${prefix}${key}`);
+      throw new Error(`Missing required hosted database setting: ${prefix}${key}`);
     }
   }
 }
 
 console.info('Database target:', {
+  configuration: 'hosted-db-v2',
   source: prefix,
   host: process.env[`${prefix}HOST`] || '(unset)',
   port: Number(process.env[`${prefix}PORT`] || 3306),
