@@ -19,6 +19,8 @@ For production, run `npm.cmd run build`, then `npm.cmd start` (use `npm` on Linu
 
 The server loads `server/.env` regardless of the startup working directory. Environment variables supplied by the hosting platform take precedence.
 
+For external MySQL on GoDaddy Node.js Hosting, configure `ASSAIL_DB_HOST`, `ASSAIL_DB_PORT`, `ASSAIL_DB_USER`, `ASSAIL_DB_PASSWORD`, and `ASSAIL_DB_NAME` as hosting secrets. Set the name to `assailHealthcare` and use the external server's connection details. When any `ASSAIL_DB_*` setting exists, the app uses that group exclusively and requires host, user, password, and name; it does not mix in hosting-provided `DB_*` values. Local development continues to use `DB_*` when no `ASSAIL_DB_*` settings exist. Deploy this code and the secrets to preview, verify login, then publish to live.
+
 ## API
 
 - `GET /api/health`

@@ -4,12 +4,23 @@ import { fileURLToPath } from 'node:url';
 
 dotenv.config({ path: fileURLToPath(new URL('../.env', import.meta.url)) });
 
+// Keep external credentials separate from hosting-provided DB_* settings.
+const external = Object.keys(process.env).some(key => key.startsWith('ASSAIL_DB_'));
+const prefix = external ? 'ASSAIL_DB_' : 'DB_';
+if (external) {
+  for (const key of ['HOST', 'USER', 'PASSWORD', 'NAME']) {
+    if (!process.env[`${prefix}${key}`]) {
+      throw new Error(`Missing required external database setting: ${prefix}${key}`);
+    }
+  }
+}
+
 export const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'assailHealthcare',
+  host: process.env[`${prefix}HOST`],
+  port: Number(process.env[`${prefix}PORT`] || 3306),
+  user: process.env[`${prefix}USER`],
+  password: process.env[`${prefix}PASSWORD`] || '',
+  database: process.env[`${prefix}NAME`] || 'assailHealthcare',
   waitForConnections: true,
   connectionLimit: 10,
   namedPlaceholders: true
