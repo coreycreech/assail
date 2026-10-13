@@ -15,6 +15,13 @@ if (external) {
   }
 }
 
+console.info('Database target:', {
+  source: prefix,
+  host: process.env[`${prefix}HOST`] || '(unset)',
+  port: Number(process.env[`${prefix}PORT`] || 3306),
+  database: process.env[`${prefix}NAME`] || 'assailHealthcare'
+});
+
 export const pool = mysql.createPool({
   host: process.env[`${prefix}HOST`],
   port: Number(process.env[`${prefix}PORT`] || 3306),
