@@ -21,6 +21,14 @@ For local development, the server loads `server/.env` regardless of the startup 
 
 On GoDaddy Node.js Hosting, use the attached hosted database's injected `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_NAME` settings. With `NODE_ENV=production`, the app does not load `server/.env` and requires database host, user, password, and name in the environment. Legacy `ASSAIL_DB_*` settings are ignored. Configure a stable `AUTH_TOKEN_SECRET` in hosting secrets. The startup diagnostic identifies this configuration as `hosted-db-v2` and logs the selected host, port, and database without credentials. Deploy to preview, verify login, then publish to live.
 
+## User administration
+
+The Users sidebar link opens `/admin/users`. Only accounts with `userTypeId = 1` can access the user APIs; the server checks the current database role on every request. User types are selected from the existing `UserType` table. Confirm that type 1 is your administrator role before deployment.
+
+For an existing database, import `database/migrations/007_user_management.sql` before deploying this feature. It expands the password column to support bcrypt hashes and adds a unique username constraint without replacing records. Resolve duplicate usernames before running the migration. New database installs use the updated base schema and should not rerun this migration. New or reset passwords must have at least 12 characters and no more than 72 UTF-8 bytes; leaving the password blank during an edit preserves it. Existing legacy passwords remain usable. Administrators cannot delete or demote their own account. Deletion removes user-management access even for an existing token because these endpoints recheck the user record; other existing portal endpoints retain their existing authorization behavior.
+
+Run the isolated user API checks with `node --test server/test/users.test.js`. These checks do not connect to MySQL or modify hosted data.
+
 ## API
 
 - `GET /api/health`
@@ -33,4 +41,4 @@ On GoDaddy Node.js Hosting, use the attached hosted database's injected `DB_HOST
 - `GET|POST /api/clients/:clientId/billing` and `PUT|DELETE /api/billing/:id`
 - `POST /api/auth/login`
 
-The legacy `User.password` field is used only for a transitional login comparison. New password hashes should be stored in a dedicated migration before production use.
+User management: `GET|POST /api/users`, `PUT|DELETE /api/users/:id`, and `GET /api/user-types` require an administrator token. Passwords and hashes are never included in user-management responses.

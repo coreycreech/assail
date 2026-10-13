@@ -207,7 +207,7 @@ DROP TABLE IF EXISTS `User`;
 CREATE TABLE `User` (
   `userId` int NOT NULL AUTO_INCREMENT,
   `userName` varchar(30) NOT NULL,
-  `password` varchar(30) NOT NULL,
+  `password` varchar(255) NOT NULL,
   `userTypeId` int NOT NULL,
   `email` varchar(50) NOT NULL,
   `sirName` char(4) NOT NULL,
@@ -215,7 +215,8 @@ CREATE TABLE `User` (
   `middleName` varchar(30) NOT NULL,
   `lastName` varchar(30) NOT NULL,
   `suffix` char(4) NOT NULL,
-  PRIMARY KEY (`userId`)
+  PRIMARY KEY (`userId`),
+  UNIQUE KEY `uq_user_username` (`userName`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

@@ -8,6 +8,7 @@ import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypt
 import { mkdir, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { pool } from './db.js';
+import { registerUsers } from './users.js';
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -438,6 +439,8 @@ app.post('/api/documents', upload.single('file'), async (req, res) => { if (!req
 app.delete('/api/documents/:id', async (req, res) => { await pool.query('DELETE FROM Document WHERE docId = ?', [req.params.id]); res.sendStatus(204); });
 
 app.post('/api/auth/login', async (req, res) => { const [rows] = await pool.query('SELECT userId, userName, password, userTypeId, email, firstName, lastName FROM User WHERE userName = ?', [req.body.userName]); const user = rows[0]; const valid = user && (user.password.startsWith('$2') ? await bcrypt.compare(req.body.password || '', user.password) : user.password === req.body.password); if (!valid) return res.status(401).json({ message: 'Invalid credentials' }); delete user.password; res.json({ user, token: issueAuthToken(user) }); });
+
+registerUsers(app, pool, requireAuth);
 
 app.use(express.static(clientBuildDirectory));
 app.get('*', (req, res, next) => {

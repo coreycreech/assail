@@ -14,6 +14,7 @@
       <a class="portal-logo" routerLink="/" aria-label="Assail Health Care home"><img src="/assail-logo.svg" alt="Assail Health Care"></a>
       <p class="portal-label">CARE TEAM PORTAL</p>
       <nav class="portal-nav" aria-label="Care team pages">
+        <a *ngIf="auth.currentUser()?.userTypeId == 1" routerLink="/admin/users" routerLinkActive="active"><span class="portal-nav-icon" aria-hidden="true">U</span>Users</a>
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}"><span class="portal-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Overview</a>
         <a routerLink="/calendar" routerLinkActive="active"><span class="portal-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg></span>Care calendar</a>
         <a routerLink="/billing" routerLinkActive="active"><span class="portal-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 13h3M8 16h6M16 13h2"/></svg></span>Billing</a>
