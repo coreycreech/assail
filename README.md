@@ -11,9 +11,13 @@ Care-team portal built with Angular and an Express/MySQL API.
 
 1. Copy `server/.env.example` to `server/.env`, set the database values, and replace `AUTH_TOKEN_SECRET` with a long random secret. Keep that secret stable between server restarts so signed-in editors' tokens stay valid.
 2. `npm.cmd install`
-3. `npm.cmd start`
+3. `npm.cmd run dev`
 
 Open `http://localhost:4200`. The API runs on `http://localhost:3000`.
+
+For production, run `npm.cmd run build`, then `npm.cmd start` (use `npm` on Linux). The Express server serves both the built frontend and `/api` on `PORT`, defaulting to 3000. Configure the hosting web server to forward the site's requests to this Node process. Uploading only the frontend files does not provide the login API.
+
+The server loads `server/.env` regardless of the startup working directory. Environment variables supplied by the hosting platform take precedence.
 
 ## API
 
