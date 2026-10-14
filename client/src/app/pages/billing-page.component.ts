@@ -1,3 +1,4 @@
+import { FormModalComponent } from '../form-modal.component';
 ﻿import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -5,7 +6,7 @@ import { RouterLink } from '@angular/router';
 import { ApiService, BillingEntry, BillingFields, ClientItem, ServiceItem } from '../api.service';
 
 @Component({
-  selector: 'app-billing-page', standalone: true, imports: [CommonModule, FormsModule, RouterLink],
+  selector: 'app-billing-page', standalone: true, imports: [CommonModule, FormsModule, RouterLink, FormModalComponent],
   template: `
     <section class="billing-page">
       <div class="section-head billing-heading">
@@ -36,18 +37,7 @@ import { ApiService, BillingEntry, BillingFields, ClientItem, ServiceItem } from
             <table class="billing-grid">
               <thead><tr><th scope="col">Visit date</th><th scope="col">Start</th><th scope="col">End</th><th scope="col">Service / visit</th><th scope="col">Code</th><th scope="col">Units</th><th scope="col">Rate</th><th scope="col">Amount</th><th scope="col">Field notes</th><th scope="col">Actions</th></tr></thead>
               <tbody>
-                <tr class="billing-edit-row" *ngIf="editingId === 0">
-                  <td><input aria-label="Visit date" name="visitDate" type="date" [(ngModel)]="draft.visitDate" required></td>
-                  <td><input aria-label="Start time" name="startTime" type="time" [(ngModel)]="draft.startTime"></td>
-                  <td><input aria-label="End time" name="endTime" type="time" [(ngModel)]="draft.endTime"></td>
-                  <td><select aria-label="Service" name="serviceId" [(ngModel)]="draft.serviceId" (ngModelChange)="onServiceChange($event)" required><option [ngValue]="null">Select service</option><option *ngFor="let service of services()" [ngValue]="service.serviceId">{{service.serviceName}}</option></select></td>
-                  <td><input aria-label="Billing code" name="billingCode" maxlength="30" [(ngModel)]="draft.billingCode" placeholder="Code"></td>
-                  <td><input aria-label="Units" name="units" type="number" min="0.01" max="999999.99" step="0.01" [(ngModel)]="draft.units" required></td>
-                  <td class="billing-money">{{draft.rate === null ? '-' : (draft.rate | currency:'USD':'symbol':'1.2-2')}}</td>
-                  <td class="billing-money">{{calculatedAmount() | currency:'USD':'symbol':'1.2-2'}}</td>
-                  <td><textarea aria-label="Field notes" name="notes" maxlength="65535" [(ngModel)]="draft.notes" rows="2" placeholder="Notes from the visit"></textarea></td>
-                  <td class="billing-actions"><button class="primary billing-save" type="submit" [disabled]="saving()">Save</button><button class="event-action" type="button" (click)="cancelEdit()">Cancel</button></td>
-                </tr>
+
                 <tr *ngFor="let entry of entries()" [class.billing-edit-row]="editingId === entry.billingId">
                   <ng-container *ngIf="editingId === entry.billingId; else readOnlyRow">
                     <td><input aria-label="Visit date" name="visitDate" type="date" [(ngModel)]="draft.visitDate" required></td>
@@ -78,6 +68,23 @@ import { ApiService, BillingEntry, BillingFields, ClientItem, ServiceItem } from
         <div class="card billing-empty" *ngIf="clients().length; else noClients">Choose a client above to open their worksheet.</div>
         <ng-template #noClients><div class="card billing-empty">Add a client before entering billing visits.</div></ng-template>
       </ng-template>
+
+      <app-form-modal *ngIf="editingId === 0" label="Add billing visit" [busy]="saving()" (dismiss)="cancelEdit()">
+        <p>Client: <strong>{{selectedClientName()}}</strong></p>
+        <p class="error" *ngIf="error()" role="alert">{{error()}}</p>
+        <form class="card client-form" (ngSubmit)="saveDraft()">
+          <label>Visit date (required)<input name="visitDate" type="date" [(ngModel)]="draft.visitDate" required></label>
+          <label>Service (required)<select name="serviceId" [(ngModel)]="draft.serviceId" (ngModelChange)="onServiceChange($event)" required><option [ngValue]="null">Select service</option><option *ngFor="let service of services()" [ngValue]="service.serviceId">{{service.serviceName}}</option></select></label>
+          <label>Start time<input name="startTime" type="time" [(ngModel)]="draft.startTime"></label>
+          <label>End time<input name="endTime" type="time" [(ngModel)]="draft.endTime"></label>
+          <label>Billing code<input name="billingCode" maxlength="30" [(ngModel)]="draft.billingCode"></label>
+          <label>Units (required)<input name="units" type="number" min="0.01" max="999999.99" step="0.01" [(ngModel)]="draft.units" required></label>
+          <p>Rate: {{draft.rate === null ? '-' : (draft.rate | currency:'USD':'symbol':'1.2-2')}}</p>
+          <p>Amount: {{calculatedAmount() | currency:'USD':'symbol':'1.2-2'}}</p>
+          <label class="wide">Field notes<textarea name="notes" maxlength="65535" [(ngModel)]="draft.notes" rows="3"></textarea></label>
+          <div class="wide form-actions"><button type="button" class="text-btn" (click)="cancelEdit()" [disabled]="saving()">Cancel</button><button class="primary" type="submit" [disabled]="saving()">{{saving() ? 'Saving...' : 'Save visit'}}</button></div>
+        </form>
+      </app-form-modal>
       <p class="billing-footnote">Amounts are calculated from units * rate. Visit records are kept with their client and cannot be removed by deleting the client.</p>
     </section>`
 })
@@ -146,7 +153,7 @@ export class BillingPageComponent implements OnInit {
 
   saveDraft() {
     const clientId = this.selectedClientId();
-    if (clientId === null || this.draft.serviceId === null) return;
+    if (this.saving() || clientId === null || this.draft.serviceId === null) return;
     const fields: BillingFields = {
       ...this.draft,
       serviceDescription: this.draft.serviceDescription.trim(),

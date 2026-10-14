@@ -144,3 +144,5 @@ p{color:var(--body);line-height:1.65}
 .portal-nav-folder-items{display:grid;gap:6px;margin:6px 0 0 26px;border-left:1px solid #dce5ed;padding-left:10px}
 .portal-nav-folder-items a{min-height:42px}
 @media(max-width:700px){.portal-nav-folder{flex:0 0 auto}.portal-nav-folder summary{min-height:38px;padding:8px 10px;white-space:nowrap}.portal-nav-folder-items{margin-left:12px}.portal-nav-folder-items a{white-space:nowrap}}
+
+app-form-modal .card{box-shadow:none;border:0;padding:0;margin:0}app-form-modal .appointment-form,app-form-modal .service-form,app-form-modal .client-form{margin:0}app-form-modal .form-heading{display:none}

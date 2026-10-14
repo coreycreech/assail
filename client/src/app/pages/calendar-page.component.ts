@@ -1,3 +1,4 @@
+import { FormModalComponent } from '../form-modal.component';
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,7 +8,7 @@ type AppointmentBoundary = 'start' | 'end';
 interface CalendarDay { key: string; number: number; inMonth: boolean; isToday: boolean; events: CalendarEvent[]; }
 
 @Component({
-  selector: 'app-calendar-page', standalone: true, imports: [CommonModule, FormsModule],
+  selector: 'app-calendar-page', standalone: true, imports: [CommonModule, FormsModule, FormModalComponent],
   template: `
     <section class="calendar-page">
       <p class="error" *ngIf="error()">{{error()}}</p>
@@ -35,7 +36,9 @@ interface CalendarDay { key: string; number: number; inMonth: boolean; isToday: 
         </aside>
       </div>
 
-      <form class="card appointment-form" *ngIf="appointmentOpen" (ngSubmit)="saveAppointment()">
+      <app-form-modal *ngIf="appointmentOpen" [label]="editingEventId === undefined ? 'Add appointment' : 'Edit appointment'" (dismiss)="cancelAppointment()">
+      <p class="error" *ngIf="error()" role="alert">{{error()}}</p>
+      <form class="card appointment-form" (ngSubmit)="saveAppointment()">
         <div class="form-heading wide"><span class="form-icon">+</span><div><h3>{{editingEventId === undefined ? 'Schedule an appointment' : 'Edit appointment'}}</h3><p>{{editingEventId === undefined ? 'Add visit details and choose the date and time.' : 'Update the visit details, dates, or times.'}}</p></div></div>
         <label class="wide">Appointment title<input name="eventTitle" [(ngModel)]="newAppointment.eventTitle" required maxlength="50" placeholder="e.g. Follow-up visit"></label>
         <label>Subject<input name="eventSubject" [(ngModel)]="newAppointment.eventSubject" required maxlength="100" placeholder="e.g. Primary care"></label>
@@ -46,6 +49,7 @@ interface CalendarDay { key: string; number: number; inMonth: boolean; isToday: 
         <label class="check wide"><input name="isAllDay" [(ngModel)]="newAppointment.isAllDay" type="checkbox"> This is an all-day appointment</label>
         <div class="wide form-actions"><span>Complete the title, subject, dates, times, and notes. Repeats is optional.</span><div><button type="button" class="text-btn cancel" (click)="cancelAppointment()">Cancel</button><button class="primary" type="submit">{{editingEventId === undefined ? 'Save appointment' : 'Save changes'}}</button></div></div>
       </form>
+      </app-form-modal>
     </section>`
 })
 export class CalendarPageComponent implements OnInit {

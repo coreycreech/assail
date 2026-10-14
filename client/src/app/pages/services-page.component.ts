@@ -1,21 +1,25 @@
+import { FormModalComponent } from '../form-modal.component';
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, ServiceFields, ServiceItem } from '../api.service';
 
 @Component({
-  selector: 'app-services-page', standalone: true, imports: [CommonModule, FormsModule],
+  selector: 'app-services-page', standalone: true, imports: [CommonModule, FormsModule, FormModalComponent],
   template: `
     <section class="services-page">
       <div class="section-head"><div><p class="eyebrow">BILLING SETUP</p><h1>Services</h1><p>Manage the services and rates available in client billing worksheets.</p></div><button class="primary" type="button" (click)="formOpen ? cancelForm() : startCreate()">{{formOpen ? 'Close' : 'Add service'}}</button></div>
       <p class="error" *ngIf="error()" role="alert">{{error()}}</p>
-      <form class="card service-form" *ngIf="formOpen" (ngSubmit)="save()">
+      <app-form-modal *ngIf="formOpen" [label]="editingId === null ? 'Add service' : 'Edit service'" (dismiss)="cancelForm()">
+      <p class="error" *ngIf="error()" role="alert">{{error()}}</p>
+      <form class="card service-form" (ngSubmit)="save()">
         <div class="form-heading wide"><span class="form-icon">$</span><div><h2>{{editingId === null ? 'Add a service' : 'Edit service'}}</h2><p>The saved billing rate will be used when this service is selected on a visit.</p></div></div>
         <label>Service name<input name="serviceName" [(ngModel)]="draft.serviceName" maxlength="100" required placeholder="e.g. In-home support"></label>
         <label>Billing rate<input name="billingRate" [(ngModel)]="draft.billingRate" type="number" min="0" max="99999999.99" step="0.01" required placeholder="0.00"></label>
         <label class="wide">Description<textarea name="description" [(ngModel)]="draft.description" maxlength="500" rows="3" placeholder="Describe what this service includes"></textarea></label>
         <div class="wide form-actions"><span>Existing visits keep their recorded service name and rate.</span><div><button type="button" class="text-btn cancel" (click)="cancelForm()">Cancel</button><button class="primary" type="submit">{{editingId === null ? 'Save service' : 'Save changes'}}</button></div></div>
       </form>
+      </app-form-modal>
       <div class="card service-list" *ngIf="services().length; else noServices">
         <div class="service-row service-list-heading"><span>Service</span><span>Description</span><span>Rate</span><span>Actions</span></div>
         <article class="service-row" *ngFor="let service of services()">

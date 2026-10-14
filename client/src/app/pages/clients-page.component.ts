@@ -1,15 +1,18 @@
+import { FormModalComponent } from '../form-modal.component';
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, ClientFields, ClientItem } from '../api.service';
 
 @Component({
-  selector: 'app-clients-page', standalone: true, imports: [CommonModule, FormsModule],
+  selector: 'app-clients-page', standalone: true, imports: [CommonModule, FormsModule, FormModalComponent],
   template: `
     <section>
       <p class="error" *ngIf="error()">{{error()}}</p>
       <div class="section-head"><div><p class="eyebrow">CLIENT DIRECTORY</p><h2>Clients</h2></div><button class="primary" type="button" (click)="clientFormOpen ? cancelClientForm() : startCreateClient()">{{clientFormOpen ? 'Close' : 'Add client'}}</button></div>
-      <form class="card client-form" *ngIf="clientFormOpen" (ngSubmit)="saveClient()">
+      <app-form-modal *ngIf="clientFormOpen" [label]="editingClientId === undefined ? 'Add client' : 'Edit client'" (dismiss)="cancelClientForm()">
+      <p class="error" *ngIf="error()" role="alert">{{error()}}</p>
+      <form class="card client-form" (ngSubmit)="saveClient()">
         <div class="form-heading wide"><span class="form-icon">+</span><div><h3>{{editingClientId === undefined ? 'Add a client' : 'Edit client'}}</h3><p>Enter the client's details for the care record.</p></div></div>
         <p class="wide client-id-note" *ngIf="editingClientId === undefined">Client ID will be assigned automatically when you save.</p><p class="wide client-id-note" *ngIf="editingClientId !== undefined">Client ID: #{{editingClientId}} (cannot be changed)</p>
         <label>Client name<input name="clientName" [(ngModel)]="clientDraft.clientName" maxlength="45" required placeholder="Client name"></label>
@@ -19,6 +22,7 @@ import { ApiService, ClientFields, ClientItem } from '../api.service';
         <label>ZIP code<input name="zip" [(ngModel)]="clientDraft.zip" maxlength="15" placeholder="ZIP code"></label>
         <div class="wide form-actions"><span>Client ID is automatically generated and cannot be changed.</span><div><button type="button" class="text-btn cancel" (click)="cancelClientForm()">Cancel</button><button class="primary" type="submit">{{editingClientId === undefined ? 'Save client' : 'Save changes'}}</button></div></div>
       </form>
+      </app-form-modal>
       <div class="client-list" *ngIf="clients().length; else noClients"><article class="card client-record" *ngFor="let client of clients()">
         <div class="client-record-heading"><div><p class="eyebrow">CLIENT #{{client.clientId}}</p><h3>{{client.clientName}}</h3></div><div class="client-record-actions"><button type="button" class="event-action" (click)="editClient(client)">Edit</button><button type="button" class="event-action delete-event" (click)="deleteClientRecord(client)">Delete</button></div></div>
         <div class="client-details"><p><b>Address</b><span>{{client.address || 'Not provided'}}</span></p><p><b>City</b><span>{{client.city || 'Not provided'}}</span></p><p><b>State</b><span>{{client.state || 'Not provided'}}</span></p><p><b>ZIP code</b><span>{{client.zip || 'Not provided'}}</span></p></div>
