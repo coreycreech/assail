@@ -1,10 +1,12 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ApiService, ClientFields, ClientItem, DocumentItem } from '../api.service';
 
 @Component({
   selector: 'app-documents-page', standalone: true, imports: [CommonModule, FormsModule],
+  styles: [`.document-action{border:0;background:none;color:#0876b9;cursor:pointer;font:inherit;padding:4px}.document-action:hover{text-decoration:underline}.document-action:disabled{opacity:.5;cursor:wait}`],
   template: `
     <section>
       <p class="error" *ngIf="error()">{{error()}}</p>
@@ -18,19 +20,20 @@ import { ApiService, ClientFields, ClientItem, DocumentItem } from '../api.servi
         <div class="upload-footer"><div class="selected-file" [class.has-file]="!!selectedFile" aria-live="polite"><span class="file-status-icon">{{selectedFile ? 'Ready' : 'Waiting'}}</span><span>{{selectedFile?.name || 'No file selected yet'}}</span></div><button type="button" class="primary upload-button" [disabled]="!selectedFile || !clientId" (click)="upload()">Upload document</button></div>
         <p class="upload-note">Choose a file and select a client to enable the upload button. PDFs, images, and text files can be previewed; other files can be downloaded.</p>
       </div>
-      <div class="card table-card"><div class="document" *ngFor="let d of documents()"><span class="doc-icon">&#128196;</span><div class="document-info"><h3>{{d.docName}}</h3><p>Client #{{d.clientId}}</p></div><a *ngIf="canPreviewDocument(d)" [href]="api.url+'/documents/'+d.docId+'/view'" target="_blank" rel="noopener noreferrer">View</a><span class="preview-unavailable" *ngIf="!canPreviewDocument(d)">Preview unavailable</span><a [href]="api.url+'/documents/'+d.docId+'/download'">Download</a><button type="button" class="delete" (click)="removeDocument(d.docId)">Remove</button></div><div class="calendar-empty" *ngIf="!documents().length">No documents have been uploaded yet. Choose a file above to add one.</div></div>
+      <div class="card table-card"><div class="document" *ngFor="let d of documents()"><span class="doc-icon">&#128196;</span><div class="document-info"><h3>{{d.docName}}</h3><p>Client #{{d.clientId}}</p></div><button type="button" class="document-action" *ngIf="canPreviewDocument(d)" [disabled]="opening().includes(d.docId)" (click)="openDocument(d, true)">View</button><span class="preview-unavailable" *ngIf="!canPreviewDocument(d)">Preview unavailable</span><button type="button" class="document-action" [disabled]="opening().includes(d.docId)" (click)="openDocument(d, false)">Download</button><button type="button" class="delete" (click)="removeDocument(d.docId)">Remove</button></div><div class="calendar-empty" *ngIf="!documents().length">No documents have been uploaded yet. Choose a file above to add one.</div></div>
     </section>`
 })
 export class DocumentsPageComponent implements OnInit {
   documents = signal<DocumentItem[]>([]);
   clients = signal<ClientItem[]>([]);
   error = signal('');
+  opening = signal<number[]>([]);
   clientId: number | null = null;
   clientCreationOpen = false;
   newClientName = '';
   selectedFile?: File;
   private documentFileInput?: HTMLInputElement;
-  constructor(public api: ApiService) {}
+  constructor(public api: ApiService, private http: HttpClient) {}
   ngOnInit() {
     this.refreshDocuments();
     this.api.clients().subscribe({ next: clients => { this.clients.set(clients); if (!clients.some(client => client.clientId === this.clientId)) this.clientId = clients[0]?.clientId ?? null; }, error: () => this.error.set('Unable to load clients.') });
@@ -38,6 +41,35 @@ export class DocumentsPageComponent implements OnInit {
   private refreshDocuments() { this.api.documents().subscribe({ next: docs => this.documents.set(docs), error: () => this.error.set('Unable to load documents.') }); }
   chooseFile(event: Event) { this.documentFileInput = event.target as HTMLInputElement; this.selectedFile = this.documentFileInput.files?.[0]; }
   canPreviewDocument(document: DocumentItem) { return /\.(pdf|png|jpe?g|gif|webp|txt)$/i.test(document.filePath || document.docName); }
+  openDocument(document: DocumentItem, preview: boolean) {
+    if (this.opening().includes(document.docId)) return;
+    // Open immediately during the click so browsers do not block the preview tab.
+    const tab = preview ? window.open('about:blank', '_blank') : null;
+    if (preview && !tab) { this.error.set('Allow pop-ups for this site to view documents, or use Download.'); return; }
+    if (tab) { tab.opener = null; tab.document.title = 'Loading document'; tab.document.body.textContent = 'Loading document...'; }
+    this.error.set('');
+    this.opening.update(ids => [...ids, document.docId]);
+    this.http.get(this.api.url + '/documents/' + document.docId + (preview ? '/view' : '/download'), {responseType:'blob'}).subscribe({
+      next: blob => {
+        this.opening.update(ids => ids.filter(id => id !== document.docId));
+        if (preview && tab?.closed) return;
+        const url = URL.createObjectURL(blob);
+        if (tab) {
+          tab.location.replace(url);
+          const timer = window.setInterval(() => { if (tab.closed) { URL.revokeObjectURL(url); window.clearInterval(timer); } }, 1000);
+        } else {
+          const link = window.document.createElement('a');
+          link.href = url; link.download = document.docName; window.document.body.appendChild(link); link.click(); link.remove();
+          window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+        }
+      },
+      error: error => {
+        tab?.close();
+        this.opening.update(ids => ids.filter(id => id !== document.docId));
+        this.error.set(error.status === 401 ? 'Your session has expired. Sign in again to open documents.' : error.status === 403 ? 'You do not have access to this document.' : error.status === 404 ? 'This document is no longer available.' : error.status === 415 ? 'This file cannot be previewed. Use Download instead.' : 'Unable to open the document. Please try again.');
+      }
+    });
+  }
   addClient() {
     const clientName = this.newClientName.trim(); if (!clientName) return;
     const fields: ClientFields = { clientName, address: '', city: '', state: '', zip: '' };
