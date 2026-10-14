@@ -12,6 +12,7 @@ import { AuthService } from './auth.service';
 })
 export class AppComponent implements OnInit {
   online = signal(false);
+  administrationOpen = signal(false);
   currentYear = new Date().getFullYear();
   isPublicLayout = signal(true);
   isHomePage = signal(true);
@@ -31,6 +32,7 @@ export class AppComponent implements OnInit {
 
   private setLayout(url: string) {
     const path = url.split('?')[0].replace(/\/$/, '');
+    if (path === '/admin/users' || path === '/admin/user-types') this.administrationOpen.set(true);
     this.isHomePage.set(path === '');
     this.isPublicLayout.set(path === '' || path === '/login' || path === '/content');
   }

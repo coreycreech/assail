@@ -9,6 +9,7 @@ import { mkdir, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { pool } from './db.js';
 import { registerUsers } from './users.js';
+import { apiAccess } from './access.js';
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -63,6 +64,8 @@ const requireAuth = (req, res, next) => {
     return res.status(401).json({ message: 'Your sign-in has expired. Please sign in again.' });
   }
 };
+app.use('/api', apiAccess(pool, requireAuth));
+
 const appointmentFrom = body => {
   const required = ['eventTitle', 'eventStart', 'eventEnd', 'eventSubject', 'eventDetail'];
   const missing = required.filter(field => !String(body[field] ?? '').trim());

@@ -25,21 +25,22 @@ interface UserType { userTypeId:number; userTypeDesc:string; }
       <p class="notice" role="status" *ngIf="notice()">{{notice()}}</p>
       <form #form="ngForm" class="card user-form" *ngIf="draft as d" (ngSubmit)="save()">
         <h2 class="wide">{{editingId === null ? 'Add user' : 'Edit user'}}</h2>
-        <label>Username<input name="userName" [(ngModel)]="d.userName" maxlength="30" required autocomplete="off"></label>
-        <label>Email<input name="email" [(ngModel)]="d.email" maxlength="50" required type="email" email></label>
-        <label>Title<input name="sirName" [(ngModel)]="d.sirName" maxlength="4" placeholder="Dr."></label>
-        <label>First name<input name="firstName" [(ngModel)]="d.firstName" maxlength="30" required></label>
-        <label>Middle name<input name="middleName" [(ngModel)]="d.middleName" maxlength="30"></label>
-        <label>Last name<input name="lastName" [(ngModel)]="d.lastName" maxlength="30" required></label>
-        <label>Suffix<input name="suffix" [(ngModel)]="d.suffix" maxlength="4"></label>
-        <label>User type<select name="userTypeId" [(ngModel)]="d.userTypeId" required [disabled]="editingId === auth.currentUser()?.userId"><option *ngFor="let type of types()" [ngValue]="type.userTypeId">{{type.userTypeDesc}} ({{type.userTypeId}})</option></select></label>
-        <label class="wide">{{editingId === null ? 'Password' : 'New password (leave blank to keep current password)'}}<input name="password" type="password" [(ngModel)]="d.password" [required]="editingId === null" minlength="12" maxlength="72" autocomplete="new-password"><small>Use at least 12 characters; maximum 72 UTF-8 bytes.</small></label>
+        <label>Username (required)<input name="userName" [(ngModel)]="d.userName" maxlength="30" required autocomplete="off"></label>
+        <label>Email (required)<input name="email" [(ngModel)]="d.email" maxlength="50" required type="email" email></label>
+        <label>Title (optional)<input name="sirName" [(ngModel)]="d.sirName" maxlength="4" placeholder="Dr."></label>
+        <label>First name (required)<input name="firstName" [(ngModel)]="d.firstName" maxlength="30" required></label>
+        <label>Middle name (optional)<input name="middleName" [(ngModel)]="d.middleName" maxlength="30"></label>
+        <label>Last name (required)<input name="lastName" [(ngModel)]="d.lastName" maxlength="30" required></label>
+        <label>Suffix (optional)<input name="suffix" [(ngModel)]="d.suffix" maxlength="4"></label>
+        <label>User type (required)<select name="userTypeId" [(ngModel)]="d.userTypeId" required [disabled]="busy()"><option *ngFor="let type of types()" [ngValue]="type.userTypeId">{{type.userTypeDesc}} ({{type.userTypeId}})</option></select></label>
+        <label class="wide">{{editingId === null ? 'Password (required)' : 'New password (optional; leave blank to keep current password)'}}<input name="password" type="password" [(ngModel)]="d.password" [required]="editingId === null" minlength="12" maxlength="72" autocomplete="new-password"><small>Use at least 12 characters; maximum 72 UTF-8 bytes.</small></label>
         <div class="wide actions"><button type="button" class="text-btn" (click)="draft=null" [disabled]="busy()">Cancel</button><button class="primary" [disabled]="form.invalid || busy() || !types().length">{{busy() ? 'Saving…' : 'Save user'}}</button></div>
       </form>
       <p *ngIf="loading()" role="status">Loading users…</p>
-      <div class="card table-wrap" *ngIf="!loading()">
+      <div class="card table-wrap" *ngIf="!loading() && !draft">
+        <h2>Existing users</h2>
         <table *ngIf="users().length; else empty"><thead><tr><th scope="col">Username</th><th scope="col">Name</th><th scope="col">Email</th><th scope="col">User type</th><th scope="col">Actions</th></tr></thead>
-        <tbody><tr *ngFor="let user of users()"><td>{{user.userName}}</td><td>{{user.firstName}} {{user.lastName}}</td><td>{{user.email}}</td><td>{{typeName(user.userTypeId)}}</td><td><div class="actions"><button class="event-action" (click)="edit(user)" [disabled]="busy()">Edit</button><button class="event-action delete-event" (click)="remove(user)" [disabled]="busy() || user.userId === auth.currentUser()?.userId">Delete</button></div></td></tr></tbody></table>
+        <tbody><tr *ngFor="let user of users()"><td>{{user.userName}}</td><td>{{user.firstName}} {{user.lastName}}</td><td>{{user.email}}</td><td>{{typeName(user.userTypeId)}}</td><td><div class="actions"><button class="event-action" (click)="edit(user)" [disabled]="busy() || user.userId === auth.currentUser()?.userId">Edit</button><button class="event-action delete-event" (click)="remove(user)" [disabled]="busy() || user.userId === auth.currentUser()?.userId">Delete</button></div></td></tr></tbody></table>
         <ng-template #empty><p *ngIf="!error()">No users found.</p></ng-template>
       </div>
     </section>`
@@ -54,10 +55,11 @@ export class UsersPageComponent implements OnInit {
   }
   refresh() { this.loading.set(true); this.http.get<UserRecord[]>('/api/users').subscribe({next:rows=>{this.users.set(rows);this.loading.set(false);},error:e=>{this.error.set(e.error?.message || 'Unable to load users.');this.loading.set(false);}}); }
   typeName(id:number) { return this.types().find(t=>t.userTypeId===id)?.userTypeDesc || String(id); }
-  create() { this.editingId=null;this.error.set('');this.notice.set('');this.draft={userName:'',email:'',sirName:'',firstName:'',middleName:'',lastName:'',suffix:'',userTypeId:this.types().find(t=>t.userTypeId!==1)?.userTypeId || 1,password:''}; }
-  edit(user:UserRecord) { const {userId,...fields}=user;this.editingId=userId;this.draft={...fields,password:''};this.error.set('');this.notice.set(''); }
+  create() { this.editingId=null;this.error.set('');this.notice.set('');this.draft={userName:'',email:'',sirName:'',firstName:'',middleName:'',lastName:'',suffix:'',userTypeId:2,password:''}; }
+  edit(user:UserRecord) { if(user.userId === this.auth.currentUser()?.userId) return; const {userId,...fields}=user;this.editingId=userId;this.draft={...fields,password:''};this.error.set('');this.notice.set(''); }
   save() {
     if(!this.draft || this.busy()) return;
+    if(this.editingId === this.auth.currentUser()?.userId) { this.error.set('You cannot edit your own account.'); return; }
     this.busy.set(true);this.error.set('');
     const request=this.editingId===null ? this.http.post<UserRecord>('/api/users',this.draft) : this.http.put<UserRecord>('/api/users/'+this.editingId,this.draft);
     request.subscribe({next:()=>{this.busy.set(false);this.draft=null;this.notice.set('User saved.');this.refresh();},error:e=>{this.busy.set(false);this.error.set(e.error?.message || 'Unable to save user.');}});
