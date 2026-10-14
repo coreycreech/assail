@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -6,7 +6,7 @@ import { ApiService, ClientFields, ClientItem, DocumentItem } from '../api.servi
 
 @Component({
   selector: 'app-documents-page', standalone: true, imports: [CommonModule, FormsModule],
-  styles: [`.document-action{border:0;background:none;color:#0876b9;cursor:pointer;font:inherit;padding:4px}.document-action:hover{text-decoration:underline}.document-action:disabled{opacity:.5;cursor:wait}`],
+  styles: [`.document-client-group{margin-top:20px}.document-group-heading{padding:20px 0 12px;border-bottom:1px solid #dde5ec}.document-group-heading h2{margin:0;font-size:21px}.document-group-heading p{margin:6px 0 0;color:#64748b}.document-action{border:0;background:none;color:#0876b9;cursor:pointer;font:inherit;padding:4px}.document-action:hover{text-decoration:underline}.document-action:disabled{opacity:.5;cursor:wait}`],
   template: `
     <section>
       <p class="error" *ngIf="error()">{{error()}}</p>
@@ -20,12 +20,26 @@ import { ApiService, ClientFields, ClientItem, DocumentItem } from '../api.servi
         <div class="upload-footer"><div class="selected-file" [class.has-file]="!!selectedFile" aria-live="polite"><span class="file-status-icon">{{selectedFile ? 'Ready' : 'Waiting'}}</span><span>{{selectedFile?.name || 'No file selected yet'}}</span></div><button type="button" class="primary upload-button" [disabled]="!selectedFile || !clientId" (click)="upload()">Upload document</button></div>
         <p class="upload-note">Choose a file and select a client to enable the upload button. PDFs, images, and text files can be previewed; other files can be downloaded.</p>
       </div>
-      <div class="card table-card"><div class="document" *ngFor="let d of documents()"><span class="doc-icon">&#128196;</span><div class="document-info"><h3>{{d.docName}}</h3><p>Client #{{d.clientId}}</p></div><button type="button" class="document-action" *ngIf="canPreviewDocument(d)" [disabled]="opening().includes(d.docId)" (click)="openDocument(d, true)">View</button><span class="preview-unavailable" *ngIf="!canPreviewDocument(d)">Preview unavailable</span><button type="button" class="document-action" [disabled]="opening().includes(d.docId)" (click)="openDocument(d, false)">Download</button><button type="button" class="delete" (click)="removeDocument(d.docId)">Remove</button></div><div class="calendar-empty" *ngIf="!documents().length">No documents have been uploaded yet. Choose a file above to add one.</div></div>
+      <section class="card table-card document-client-group" *ngFor="let group of documentGroups()" [attr.aria-labelledby]="'document-client-'+group.clientId"><div class="document-group-heading"><h2 [id]="'document-client-'+group.clientId">{{group.clientName}}</h2><p>{{group.documents.length}} {{group.documents.length === 1 ? 'document' : 'documents'}}</p></div><div class="document" *ngFor="let d of group.documents"><span class="doc-icon">&#128196;</span><div class="document-info"><h3>{{d.docName}}</h3></div><button type="button" class="document-action" *ngIf="canPreviewDocument(d)" [disabled]="opening().includes(d.docId)" (click)="openDocument(d, true)">View</button><span class="preview-unavailable" *ngIf="!canPreviewDocument(d)">Preview unavailable</span><button type="button" class="document-action" [disabled]="opening().includes(d.docId)" (click)="openDocument(d, false)">Download</button><button type="button" class="delete" (click)="removeDocument(d.docId)">Remove</button></div></section><div class="card calendar-empty" *ngIf="!documents().length">No documents have been uploaded yet. Choose a file above to add one.</div>
     </section>`
 })
 export class DocumentsPageComponent implements OnInit {
   documents = signal<DocumentItem[]>([]);
   clients = signal<ClientItem[]>([]);
+  documentGroups = computed(() => {
+    const names = new Map(this.clients().map(client => [Number(client.clientId), client.clientName]));
+    const groups = new Map<number, {clientId:number;clientName:string;documents:DocumentItem[]}>();
+    for (const document of this.documents()) {
+      const id = Number(document.clientId);
+      let group = groups.get(id);
+      if (!group) {
+        group = {clientId:id,clientName:names.get(id) || ('Unknown client (ID ' + id + ')'),documents:[]};
+        groups.set(id,group);
+      }
+      group.documents.push(document);
+    }
+    return [...groups.values()].sort((a,b) => a.clientName.localeCompare(b.clientName) || a.clientId-b.clientId);
+  });
   error = signal('');
   opening = signal<number[]>([]);
   clientId: number | null = null;
