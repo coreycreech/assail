@@ -1,7 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ApiService, PageInfo, PageSection } from '../api.service';
+import { ApiService, PageInfo, PageSection, ResourceItem } from '../api.service';
 
 @Component({
   selector: 'app-home-page', standalone: true, imports: [CommonModule, RouterLink],
@@ -19,11 +19,12 @@ import { ApiService, PageInfo, PageSection } from '../api.service';
         </ul>
       </div>
     </section>
-    <section class="resources-wrap"><div class="container"><div class="resources"><h2 class="section-title section-title--light">Health Care Resources</h2><ul class="resource-list"><li *ngFor="let resource of resourceNames">{{resource}}</li></ul><p class="resource-note"><a routerLink="/resources">Sign in to access the resource directory</a></p></div></div></section>
+    <section class="resources-wrap"><div class="container"><div class="resources"><h2 class="section-title section-title--light">Health Care Resources</h2><ul class="resource-list"><li *ngFor="let resource of resources()"><a *ngIf="resource.Url; else resourceName" [href]="resource.Url" target="_blank" rel="noopener noreferrer">{{resource.name}}</a><ng-template #resourceName>{{resource.name}}</ng-template></li></ul><p *ngIf="resourcesError()" role="status">Resources are temporarily unavailable.</p><p *ngIf="!resourcesError() && !resources().length">No health care resources are currently listed.</p><p class="resource-note"><a routerLink="/resources">Sign in to access the resource directory</a></p></div></div></section>
   `
 })
 export class HomePageComponent implements OnInit {
-  readonly resourceNames = ["Virginia Medicaid's Managed Care Program", 'Provider Secure Web Portal | Aetna', 'Atrezzo/Acentra Provider Portal', 'PCA Team | Anthem', 'Direct VA', 'Anthem Providers', 'Direct My Care', 'Office Ally', 'PPL First', 'Sentara Health Plans Provider'];
+  resources = signal<Pick<ResourceItem, "resourceId" | "name" | "Url">[]>([]);
+  resourcesError = signal(false);
   title = signal('Health care created with you in mind');
   information = signal('We bring care, appointments, and trusted resources together in a clear, accessible experience designed around you.');
   servicesIntro = signal('');
@@ -32,6 +33,7 @@ export class HomePageComponent implements OnInit {
   constructor(private api: ApiService) {}
 
   ngOnInit() {
+    this.api.publicResources().subscribe({next: rows => this.resources.set(rows), error: () => this.resourcesError.set(true)});
     this.api.pages().subscribe({
       next: pages => {
         const home: PageInfo | undefined = pages.find(page => page.name.trim().toLowerCase() === 'home');

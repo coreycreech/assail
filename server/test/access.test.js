@@ -11,10 +11,11 @@ test('API access matrix checks current database roles, public content, and delet
   });
   for(const role of [undefined,1,2,3]) {
     assert.equal(await check(role,'/pages'),200);
+    assert.equal(await check(role,'/public/resources'),200);
     assert.equal(await check(role,'/pages/1/sections'),200);
     assert.equal(await check(role,'/auth/login','POST'),200);
   }
-  for(const path of ['/events','/billing/1','/clients','/services','/documents/1/download','/resources']) {
+  for(const path of ['/events','/billing/1','/clients','/services','/documents/1/download']) {
     for(const method of ['GET','POST','PUT','DELETE']) {
       assert.equal(await check(1,path,method),200);
       assert.equal(await check(2,path,method),200);
@@ -29,7 +30,12 @@ test('API access matrix checks current database roles, public content, and delet
       assert.equal(await check(2,path,method),403);
     }
   }
+  assert.equal(await check(2,'/resources'),200);
+  assert.equal(await check(undefined,'/resources'),401);
   for(const method of ['POST','PUT','DELETE']) {
+    assert.equal(await check(1,'/resources/1',method),200);
+    assert.equal(await check(2,'/resources/1',method),403);
+    assert.equal(await check(undefined,'/public/resources',method),401);
     assert.equal(await check(1,'/pages/1/sections',method),200);
     assert.equal(await check(2,'/pages/1/sections',method),403);
   }

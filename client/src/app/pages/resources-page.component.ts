@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../auth.service';
 import { ApiService, ResourceFields, ResourceItem } from '../api.service';
 
 @Component({
@@ -8,11 +9,11 @@ import { ApiService, ResourceFields, ResourceItem } from '../api.service';
   template: `
     <section>
       <p class="error" *ngIf="error()">{{error()}}</p>
-      <div class="section-head"><div><p class="eyebrow">CARE DIRECTORY</p><h2>Resources</h2></div><button class="primary" type="button" (click)="resourceFormOpen ? cancelResourceForm() : startCreateResource()">{{resourceFormOpen ? 'Close' : 'Add resource'}}</button></div>
+      <div class="section-head"><div><p class="eyebrow">CARE DIRECTORY</p><h2>Resources</h2></div><button *ngIf="isAdmin" class="primary" type="button" (click)="resourceFormOpen ? cancelResourceForm() : startCreateResource()">{{resourceFormOpen ? 'Close' : 'Add resource'}}</button></div>
       <form class="card client-form resource-form" *ngIf="resourceFormOpen" (ngSubmit)="saveResource()">
-        <div class="form-heading wide"><span class="form-icon">+</span><div><h3>{{editingResourceId === undefined ? 'Add a resource' : 'Edit resource'}}</h3><p>Enter contact details for a care resource. All fields are optional.</p></div></div>
+        <div class="form-heading wide"><span class="form-icon">+</span><div><h3>{{editingResourceId === undefined ? 'Add a resource' : 'Edit resource'}}</h3><p>Enter contact details for a care resource. The name is required. Names and website links appear on the public Home page.</p></div></div>
         <p class="wide client-id-note" *ngIf="editingResourceId === undefined">Resource ID will be assigned automatically when you save.</p><p class="wide client-id-note" *ngIf="editingResourceId !== undefined">Resource ID: #{{editingResourceId}} (cannot be changed)</p>
-        <label>Name<input name="name" [(ngModel)]="resourceDraft.name" maxlength="45" placeholder="Resource name"></label>
+        <label>Name (required)<input required name="name" [(ngModel)]="resourceDraft.name" maxlength="45" placeholder="Resource name"></label>
         <label>Phone<input name="phone" [(ngModel)]="resourceDraft.phone" maxlength="15" type="tel" placeholder="Phone number"></label>
         <label class="wide">Address line 1<input name="address1" [(ngModel)]="resourceDraft.address1" maxlength="45" placeholder="Street address"></label>
         <label class="wide">Address line 2<input name="address2" [(ngModel)]="resourceDraft.address2" maxlength="45" placeholder="Suite, unit, etc."></label>
@@ -23,10 +24,10 @@ import { ApiService, ResourceFields, ResourceItem } from '../api.service';
         <div class="wide form-actions"><span>Resource ID is automatically generated.</span><div><button type="button" class="text-btn cancel" (click)="cancelResourceForm()">Cancel</button><button class="primary" type="submit">{{editingResourceId === undefined ? 'Save resource' : 'Save changes'}}</button></div></div>
       </form>
       <div class="client-list" *ngIf="resources().length; else noResources"><article class="card client-record" *ngFor="let resource of resources()">
-        <div class="client-record-heading"><div><p class="eyebrow">RESOURCE #{{resource.resourceId}}</p><h3>{{resource.name || 'Unnamed resource'}}</h3></div><div class="client-record-actions"><button type="button" class="event-action" (click)="editResource(resource)">Edit</button><button type="button" class="event-action delete-event" (click)="deleteResource(resource)">Delete</button></div></div>
+        <div class="client-record-heading"><div><p class="eyebrow">RESOURCE #{{resource.resourceId}}</p><h3>{{resource.name || 'Unnamed resource'}}</h3></div><div class="client-record-actions" *ngIf="isAdmin"><button type="button" class="event-action" (click)="editResource(resource)">Edit</button><button type="button" class="event-action delete-event" (click)="deleteResource(resource)">Delete</button></div></div>
         <div class="client-details resource-details"><p><b>Phone</b><span>{{resource.phone || 'Not provided'}}</span></p><p><b>Address</b><span>{{resource.address1 || 'Not provided'}}<ng-container *ngIf="resource.address2">, {{resource.address2}}</ng-container></span></p><p><b>City</b><span>{{resource.city || 'Not provided'}}</span></p><p><b>State</b><span>{{resource.state || 'Not provided'}}</span></p><p><b>ZIP code</b><span>{{resource.zip || 'Not provided'}}</span></p><p><b>Website</b><span><a *ngIf="resource.Url" [href]="resource.Url" target="_blank" rel="noopener noreferrer">{{resource.Url}}</a><ng-container *ngIf="!resource.Url">Not provided</ng-container></span></p></div>
       </article></div>
-      <ng-template #noResources><div class="card calendar-empty">No resources yet. Select Add resource to create the first record.</div></ng-template>
+      <ng-template #noResources><div class="card calendar-empty">No resources yet. Administrators can add resources here.</div></ng-template>
     </section>`
 })
 export class ResourcesPageComponent implements OnInit {
@@ -35,7 +36,8 @@ export class ResourcesPageComponent implements OnInit {
   resourceFormOpen = false;
   editingResourceId?: number;
   resourceDraft: ResourceFields = this.emptyResource();
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private auth: AuthService) {}
+  get isAdmin() { return Number(this.auth.currentUser()?.userTypeId) === 1; }
   ngOnInit() { this.refresh(); }
   private emptyResource(): ResourceFields { return { name: '', phone: '', address1: '', address2: '', city: '', state: '', zip: '', Url: '' }; }
   refresh() { this.api.resources().subscribe({ next: rows => this.resources.set(rows), error: () => this.error.set('Unable to load resources.') }); }

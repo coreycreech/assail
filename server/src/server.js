@@ -8,6 +8,7 @@ import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypt
 import { mkdir, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { pool } from './db.js';
+import { ensureHomeResources } from './home-resources-migration.js';
 import { ensureHomeServiceSections } from './home-services-migration.js';
 import { ensurePasswordCapacity } from './migrations.js';
 import { registerUsers } from './users.js';
@@ -391,10 +392,26 @@ app.delete('/api/billing/:id', async (req, res) => {
 });
 
 const resourceColumns = { name: 45, phone: 15, address1: 45, address2: 45, city: 45, state: 2, zip: 15, Url: 100 };
-const resourceFields = body => Object.fromEntries(Object.entries(resourceColumns).map(([field, max]) => {
+const resourceFields = body => {
+  const fail = message => { const error = new Error(message); error.status = 400; throw error; };
+  if (!String(body.name ?? '').trim()) fail('Resource name is required.');
+  for (const [field, max] of Object.entries(resourceColumns)) {
+    if (String(body[field] ?? '').trim().length > max) fail(field + ' exceeds ' + max + ' characters.');
+  }
+  const url = String(body.Url ?? '').trim();
+  if (url) {
+    try { if (!['https:', 'http:'].includes(new URL(url).protocol)) fail('Use an http or https website URL.'); }
+    catch { fail('Use a valid http or https website URL.'); }
+  }
+  return Object.fromEntries(Object.entries(resourceColumns).map(([field, max]) => {
   const value = String(body[field] ?? '').trim().slice(0, max);
   return [field, value || null];
 }));
+};
+app.get('/api/public/resources', async (_req, res) => {
+  const [rows] = await pool.query("SELECT resourceId, name, Url FROM resource WHERE name IS NOT NULL AND TRIM(name) <> '' ORDER BY name, resourceId");
+  res.json(rows.map(row => ({...row, Url: /^https?:\/\//i.test(row.Url || '') ? row.Url : null})));
+});
 app.get('/api/resources', async (_req, res) => {
   const [rows] = await pool.query('SELECT resourceId, name, phone, address1, address2, city, state, zip, Url FROM resource ORDER BY name, resourceId');
   res.json(rows);
@@ -466,6 +483,7 @@ app.use((err, _req, res, _next) => {
 try {
   await ensurePasswordCapacity(pool);
   await ensureHomeServiceSections(pool);
+  await ensureHomeResources(pool);
   app.listen(process.env.PORT || 3000, () => console.log('Assail API listening'));
 } catch (error) {
   console.error('Startup database migration failed:', error.message);
