@@ -8,6 +8,7 @@ import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypt
 import { mkdir, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { pool } from './db.js';
+import { ensureHomeServiceSections } from './home-services-migration.js';
 import { ensurePasswordCapacity } from './migrations.js';
 import { registerUsers } from './users.js';
 import { apiAccess } from './access.js';
@@ -464,6 +465,7 @@ app.use((err, _req, res, _next) => {
 });
 try {
   await ensurePasswordCapacity(pool);
+  await ensureHomeServiceSections(pool);
   app.listen(process.env.PORT || 3000, () => console.log('Assail API listening'));
 } catch (error) {
   console.error('Startup database migration failed:', error.message);
