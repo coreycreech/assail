@@ -29,7 +29,7 @@ Admins can use all portal components. Staff can use calendar, billing, services,
 
 The Users sidebar link opens `/admin/users`. Only accounts with `userTypeId = 1` can access the user APIs; the server checks the current database role on every request. User types are selected from the existing `UserType` table. Confirm that type 1 is your administrator role before deployment.
 
-For an existing database, import `database/migrations/007_user_management.sql` before deploying this feature. It expands the password column to support bcrypt hashes and adds a unique username constraint without replacing records. Resolve duplicate usernames before running the migration. New database installs use the updated base schema and should not rerun this migration. New or reset passwords must have at least 12 characters and no more than 72 UTF-8 bytes; leaving the password blank during an edit preserves it. Existing legacy passwords remain usable. Administrators cannot edit or delete their own account. Another administrator must make changes to it. Deletion removes user-management access even for an existing token because these endpoints recheck the user record; other existing portal endpoints retain their existing authorization behavior.
+For an existing database, execute `database/migrations/007_user_management.sql` only through a direct SQL connection or an incremental application migration, never through GoDaddy Import SQL. It expands the password column to support bcrypt hashes and adds a unique username constraint without replacing records. Resolve duplicate usernames before running the migration. New database installs use the updated base schema and should not rerun this migration. New or reset passwords must have at least 12 characters and no more than 72 UTF-8 bytes; leaving the password blank during an edit preserves it. Existing legacy passwords remain usable. Administrators cannot edit or delete their own account. Another administrator must make changes to it. Deletion removes user-management access even for an existing token because these endpoints recheck the user record; other existing portal endpoints retain their existing authorization behavior.
 
 Run the isolated user API checks with `node --test server/test/users.test.js`. These checks do not connect to MySQL or modify hosted data.
 
@@ -46,3 +46,9 @@ Run the isolated user API checks with `node --test server/test/users.test.js`. T
 - `POST /api/auth/login`
 
 User management: `GET|POST /api/users`, `PUT|DELETE /api/users/:id`, and `GET /api/user-types` require an administrator token. Passwords and hashes are never included in user-management responses.
+
+## Hosted password column migration
+
+On startup, the API checks the existing `User.password` column in the connected database and widens a legacy VARCHAR column to VARCHAR(255). Sufficiently wide columns are left unchanged. This runs locally and in production before the HTTP listener starts. A database advisory lock serializes preview/published startups. A failure stops startup and reports the cause in runtime logs. Existing rows are preserved; bcrypt stays enabled. This targeted migration does not run the unique-username or user-type migrations.
+
+Deploy through GitHub and Update Preview, then look for `Password migration:` in the runtime logs and test creating a user before publishing. Preview and published share the hosted database, so preview startup applies the column change for both. Do not use GoDaddy Import SQL for migrations: it drops existing tables and replaces the database.

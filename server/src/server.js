@@ -8,6 +8,7 @@ import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypt
 import { mkdir, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { pool } from './db.js';
+import { ensurePasswordCapacity } from './migrations.js';
 import { registerUsers } from './users.js';
 import { apiAccess } from './access.js';
 
@@ -461,4 +462,11 @@ app.use((err, _req, res, _next) => {
       : err.sqlMessage || err.message;
   res.status(status).json({ message });
 });
-app.listen(process.env.PORT || 3000, () => console.log('Assail API listening'));
+try {
+  await ensurePasswordCapacity(pool);
+  app.listen(process.env.PORT || 3000, () => console.log('Assail API listening'));
+} catch (error) {
+  console.error('Startup database migration failed:', error.message);
+  await pool.end();
+  process.exitCode = 1;
+}
