@@ -1,17 +1,9 @@
-﻿<div class="site-shell" [class.portal-shell]="!isPublicLayout()">
-  <header class="site-header" *ngIf="isPublicLayout()">
-    <a class="site-logo" routerLink="/" aria-label="Assail Health Care home"><img src="/assail-logo.svg" alt="Assail Health Care"></a>
-    <nav class="site-nav" aria-label="Main navigation">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">Home</a>
-      <a routerLink="/content" routerLinkActive="active">About Us</a>
-    </nav>
-    <a class="header-contact home-admin-button" *ngIf="!auth.currentUser()" routerLink="/login"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1"/></svg>Admin</a>
-    <a class="header-contact home-admin-button" *ngIf="auth.currentUser()" [routerLink]="auth.currentUser()?.userTypeId == 1 ? '/admin/content' : '/calendar'"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15" r="1"/></svg>Admin</a>
-  </header>
+﻿<div class="site-shell" [class.portal-shell]="!isPublicLayout()" [class.designer-theme]="isPublicLayout()">
+  <header class="site-header" *ngIf="isPublicLayout()"><div class="container header-inner"><a class="logo" routerLink="/" aria-label="Assail Health Care home"><img src="/assail-healthcare-logo.svg" alt="Assail Health Care" width="144" height="48"></a><nav class="main-nav" aria-label="Main"><a class="nav-link" routerLink="/content">About Us</a><a class="btn btn-outline" [routerLink]="!auth.currentUser() ? '/login' : auth.currentUser()?.userTypeId == 1 ? '/admin/content' : '/calendar'"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>Admin</a></nav></div></header>
 
   <div class="portal-layout" [class.public-layout]="isPublicLayout()">
     <aside class="portal-sidebar" *ngIf="!isPublicLayout()">
-      <a class="portal-logo" routerLink="/" aria-label="Assail Health Care home"><img src="/assail-logo.svg" alt="Assail Health Care"></a>
+      <a class="portal-logo" routerLink="/" aria-label="Assail Health Care home"><img src="/assail-healthcare-logo.svg" alt="Assail Health Care"></a>
       <p class="portal-label">CARE TEAM PORTAL</p>
       <nav class="portal-nav" aria-label="Care team pages">
         <a *ngIf="auth.currentUser()" routerLink="/help" routerLinkActive="active"><span class="portal-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 .5c0 1.5-2.5 2-2.5 3.5M12 16h.01"/></svg></span>Help</a>
@@ -40,12 +32,14 @@
     <main class="site-main" [class.portal-main]="!isPublicLayout()" [class.home-main]="isHomePage()"><router-outlet></router-outlet></main>
   </div>
 
-  <footer class="site-footer">
+  <footer class="site-footer" *ngIf="!isPublicLayout()">
       <div class="footer-top">
-      <div class="footer-brand"><a class="site-logo" routerLink="/" aria-label="Assail Health Care home"><img src="/assail-logo.svg" alt="Assail Health Care"></a><p>Compassionate care, connected around you.</p><span class="connection"><i [class.is-online]="online()"></i>{{online() ? 'Care services connected' : 'Connecting to care services'}}</span></div>
+      <div class="footer-brand"><a class="site-logo" routerLink="/" aria-label="Assail Health Care home"><img src="/assail-healthcare-logo.svg" alt="Assail Health Care"></a><p>Compassionate care, connected around you.</p><span class="connection"><i [class.is-online]="online()"></i>{{online() ? 'Care services connected' : 'Connecting to care services'}}</span></div>
       <div class="footer-links"><h2>Explore</h2><a routerLink="/">Home</a><a routerLink="/calendar">Care calendar</a><a routerLink="/billing">Billing worksheet</a><a routerLink="/services">Billing services</a><a routerLink="/documents">Documents</a><a routerLink="/resources">Care resources</a></div>
       <div class="footer-links"><h2>Get in touch</h2><a routerLink="/content">About Assail</a><a routerLink="/clients">Client directory</a><p>Here to help you coordinate care.</p></div>
     </div>
     <div class="footer-bottom"><span>Â© {{currentYear}} Assail Healthcare</span><span>Care that keeps everyone connected.</span></div>
   </footer>
+
+  <footer class="site-footer" *ngIf="isPublicLayout()"><div class="container footer-inner"><div class="footer-brand"><a routerLink="/"><img src="/assail-healthcare-logo.svg" alt="Assail Health Care" width="144" height="48"></a><p>Assail Health Care provides progressive, affordable healthcare, accessible on mobile and online for everyone.</p></div><nav class="footer-col" aria-label="Company"><h4>Company</h4><ul><li><a routerLink="/content">About</a></li></ul></nav><nav class="footer-col" aria-label="Account"><h4>Admin</h4><ul><li><a [routerLink]="auth.currentUser() ? '/calendar' : '/login'">{{auth.currentUser() ? 'Care team portal' : 'Login'}}</a></li><li *ngIf="auth.currentUser()"><a routerLink="/help">Help</a></li></ul></nav></div><p class="copyright">Copyright {{currentYear}} Assail Health Care, LLC. All Rights Reserved</p></footer>
 </div>

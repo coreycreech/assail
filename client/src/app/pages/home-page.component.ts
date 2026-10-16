@@ -6,30 +6,13 @@ import { ApiService, PageInfo, PageSection } from '../api.service';
 @Component({
   selector: 'app-home-page', standalone: true, imports: [CommonModule, RouterLink],
   template: `
-    <section class="home-option-page">
-      <div class="home-option-hero">
-        <div class="home-hero-copy">
-          <h1>{{title()}}</h1>
-          <p>{{information()}}</p>
-          <a class="primary home-cta" routerLink="/content">About Us</a>
-        </div>
-        <img class="home-illustration" src="/assail-home-clipboard.svg" alt="" aria-hidden="true">
-      </div>
-      <section id="about" class="home-highlights" *ngIf="servicesIntro() || sections().length">
-        <p class="eyebrow">ASSAIL HEALTH CARE</p>
-        <h2>Our Services</h2>
-        <p class="home-services-intro" *ngIf="servicesIntro()">{{servicesIntro()}}</p>
-        <div class="home-section-list">
-          <article class="home-section-item" *ngFor="let section of sections(); let i = index">
-            <img class="home-section-image" *ngIf="section.imageLocation" [src]="section.imageLocation" [alt]="section.sectionTitle">
-            <span class="home-section-number" *ngIf="!section.imageLocation" aria-hidden="true">{{i + 1}}</span>
-            <div><h3>{{section.sectionTitle}}</h3><p>{{section.sectionInfo}}</p></div>
-          </article>
-        </div>
-      </section>
-    </section>`
+    <section class="hero"><div class="container hero-inner"><div class="hero-copy"><h1>{{title()}}</h1><p>{{information()}}</p><a class="btn btn-primary" routerLink="/content">About Us</a></div><div class="hero-art"><img src="/designer-hero.svg" alt="Clipboard with medical checklist and pen"></div></div></section>
+    <section class="services" id="services" *ngIf="servicesIntro() || sections().length"><div class="container"><h2 class="section-title">Our Services</h2><p class="section-intro" *ngIf="servicesIntro()">{{servicesIntro()}}</p><ul class="service-grid"><li class="service-card" *ngFor="let section of sections(); let i=index"><img class="service-icon-image" [src]="section.imageLocation || '/designer-service-' + (i % 6 + 1) + '.svg'" alt=""><h3>{{section.sectionTitle}}</h3><p>{{section.sectionInfo}}</p></li></ul></div></section>
+    <section class="resources-wrap"><div class="container"><div class="resources"><h2 class="section-title section-title--light">Health Care Resources</h2><ul class="resource-list"><li *ngFor="let resource of resourceNames">{{resource}}</li></ul><p class="resource-note"><a routerLink="/resources">Sign in to access the resource directory</a></p></div></div></section>
+  `
 })
 export class HomePageComponent implements OnInit {
+  readonly resourceNames = ["Virginia Medicaid's Managed Care Program", 'Provider Secure Web Portal | Aetna', 'Atrezzo/Acentra Provider Portal', 'PCA Team | Anthem', 'Direct VA', 'Anthem Providers', 'Direct My Care', 'Office Ally', 'PPL First', 'Sentara Health Plans Provider'];
   title = signal('Health care created with you in mind');
   information = signal('We bring care, appointments, and trusted resources together in a clear, accessible experience designed around you.');
   servicesIntro = signal('');

@@ -1,3 +1,4 @@
+import { AboutPageComponent } from './pages/about-page.component';
 import { Routes } from '@angular/router';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
@@ -29,7 +30,9 @@ export const routes: Routes = [
   { path: 'documents', canActivate: [staffGuard], component: DocumentsPageComponent, title: 'Documents' },
   { path: 'clients', canActivate: [staffGuard], component: ClientsPageComponent, title: 'Clients' },
   { path: 'resources', canActivate: [staffGuard], component: ResourcesPageComponent, title: 'Resources' },
-  { path: 'content', component: ContentPageComponent, title: 'About Us' },
+  { path: 'content', component: AboutPageComponent, title: 'About Us' },
   { path: 'admin/content', canActivate: [adminGuard], component: ContentPageComponent, title: 'Edit home page' },
+  { path: 'about.html', redirectTo: 'content', pathMatch: 'full' },
+  { path: 'about', redirectTo: 'content', pathMatch: 'full' },
   { path: '**', redirectTo: '' }
 ];
