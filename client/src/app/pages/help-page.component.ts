@@ -76,7 +76,7 @@ export class HelpPageComponent {
     "description": "The Home page introduces the organization and displays editable service panels and health care resources.",
     "steps": [
       "Use Page content to update the Home headline, supporting copy, and Our Services introduction.",
-      "Manage the service panels under Page content ? Page sections ? Home.",
+      "Manage the service panels under Page content / Page sections / Home.",
       "Manage Health Care Resources in Resources, then open Home to review the saved result."
     ],
     "note": "The Services component controls billing services and rates. It does not control the service panels on Home."
@@ -89,7 +89,7 @@ export class HelpPageComponent {
       "Select Add appointment or Schedule an appointment to open the popup.",
       "Enter a title, subject, start and end date/time, and notes. Choose a repeat option or all-day setting when needed, then save.",
       "Use the month arrows or Today, and select a day to see its appointments.",
-      "Use an appointment?s Edit or Delete action to update or remove it. Use Refresh to reload appointments."
+      "Use an appointment's Edit or Delete action to update or remove it. Use Refresh to reload appointments."
     ],
     "note": "Check the repeat setting before editing or deleting a recurring appointment."
   },
@@ -99,7 +99,7 @@ export class HelpPageComponent {
     "description": "Create the client records used by billing and documents.",
     "steps": [
       "Select Add client to open the popup. Enter the required client name and any address details, then save.",
-      "Use Edit to change a client?s information. The assigned client ID cannot be changed.",
+      "Use Edit to change a client's information. The assigned client ID cannot be changed.",
       "Use Delete only when the client is no longer needed. If linked records prevent deletion, review the message before proceeding."
     ],
     "note": "Create the client first so it can be selected when recording a visit or uploading a document."
@@ -132,11 +132,11 @@ export class HelpPageComponent {
   {
     "title": "Documents",
     "route": "/documents",
-    "description": "Upload and retrieve documents grouped under each client?s name.",
+    "description": "Upload and retrieve documents grouped under each client's name.",
     "steps": [
       "Choose a file and select the client record that should hold it. Use Add a client first if necessary.",
       "Select Upload document. Supported uploads include PDF, Word, text, and images up to 10 MB.",
-      "Find the client?s group and select View for a supported preview, or Download to save the file.",
+      "Find the client's group and select View for a supported preview, or Download to save the file.",
       "Use Remove to delete a document after confirmation."
     ],
     "note": "If a preview is unavailable, try Download. If an older file downloads blank, check the original and upload a valid copy. If your session expires, sign in again."
@@ -168,7 +168,7 @@ export class HelpPageComponent {
   {
     "title": "Users",
     "route": "/admin/users",
-    "description": "Manage sign-in accounts under Administration ? Users.",
+    "description": "Manage sign-in accounts under Administration / Users.",
     "steps": [
       "Select Add user. Enter username, email, first name, last name, user type, and a password. Title, middle name, and suffix are optional.",
       "New accounts default to Staff. Select Admin only for someone who should manage accounts and public website content. Select Save user.",
@@ -180,7 +180,7 @@ export class HelpPageComponent {
   {
     "title": "User types",
     "route": "/admin/user-types",
-    "description": "Maintain user type descriptions under Administration ? User types.",
+    "description": "Maintain user type descriptions under Administration / User types.",
     "steps": [
       "Select Add user type, enter the required description, and save.",
       "Use the available Edit or Delete actions to maintain custom types. Read any restriction message if an action is blocked.",
