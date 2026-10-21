@@ -1,3 +1,5 @@
+import { ensureAboutContent } from './about-content-migration.js';
+import { isDatabaseConnectionError } from './database-errors.js';
 ﻿import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
@@ -125,7 +127,7 @@ const pageFieldsFrom = body => {
   const title = String(body.title ?? '').trim();
   const information = String(body.information ?? '').trim();
   const servicesIntro = String(body.servicesIntro ?? '').trim();
-  if (!name || name.length > 30 || !title || title.length > 50 || information.length > 500 || servicesIntro.length > 500) {
+  if (!name || name.length > 30 || !title || title.length > 500 || information.length > 10000 || servicesIntro.length > 500) {
     const error = new Error('Page name, title, or page text is missing or exceeds its maximum length.'); error.status = 400; throw error;
   }
   return { name, title, information, servicesIntro };
@@ -472,6 +474,12 @@ app.get('*', (req, res, next) => {
 
 app.use((err, _req, res, _next) => {
   console.error(err);
+  if (isDatabaseConnectionError(err)) {
+    return res.status(503).set('X-Session-Reset', 'database-unavailable').json({
+      code: 'DATABASE_UNAVAILABLE',
+      message: 'Database connection lost. Please sign in again when the service is available.'
+    });
+  }
   const status = err.status || (err.code === 'LIMIT_FILE_SIZE' ? 413 : err.code?.startsWith('LIMIT_') ? 400 : 500);
   const message = err.status
     ? err.message
@@ -484,6 +492,7 @@ try {
   await ensurePasswordCapacity(pool);
   await ensureHomeServiceSections(pool);
   await ensureHomeResources(pool);
+  await ensureAboutContent(pool);
   app.listen(process.env.PORT || 3000, () => console.log('Assail API listening'));
 } catch (error) {
   console.error('Startup database migration failed:', error.message);

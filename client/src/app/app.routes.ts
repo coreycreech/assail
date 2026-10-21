@@ -31,7 +31,7 @@ export const routes: Routes = [
   { path: 'clients', canActivate: [staffGuard], component: ClientsPageComponent, title: 'Clients' },
   { path: 'resources', canActivate: [staffGuard], component: ResourcesPageComponent, title: 'Resources' },
   { path: 'content', component: AboutPageComponent, title: 'About Us' },
-  { path: 'admin/content', canActivate: [adminGuard], component: ContentPageComponent, title: 'Edit home page' },
+  { path: 'admin/content', canActivate: [adminGuard], component: ContentPageComponent, title: 'Page content' },
   { path: 'about.html', redirectTo: 'content', pathMatch: 'full' },
   { path: 'about', redirectTo: 'content', pathMatch: 'full' },
   { path: '**', redirectTo: '' }

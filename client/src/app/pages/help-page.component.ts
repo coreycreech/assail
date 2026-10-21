@@ -156,9 +156,10 @@ export class HelpPageComponent {
   {
     "title": "Page content",
     "route": "/admin/content",
-    "description": "Edit the Home introduction and its service panels without changing code.",
+    "description": "Edit Home and About Us content without changing code.",
     "steps": [
       "Update Headline, Supporting copy, or Our Services introduction and save the Home introduction.",
+      "Use About Us introduction to edit its introduction and full text, then select Save About Us. Select About Us under Page sections to edit customer comments, mission text, and images.",
       "Under Page sections, select Home in the Page dropdown. Select Add section to create a panel, or Edit on an existing one.",
       "Enter the section title and text. Choose an existing image, enter its image location, or upload a new image using the form. Save the section.",
       "Use Remove to delete an unwanted panel. Open Home to review the saved text and image."

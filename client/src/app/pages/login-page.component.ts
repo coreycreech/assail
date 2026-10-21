@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
 
 @Component({
@@ -24,7 +24,11 @@ export class LoginPageComponent {
   password = '';
   error = signal('');
   submitting = signal(false);
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router, route: ActivatedRoute) {
+    if (route.snapshot.queryParamMap.get('reason') === 'database-unavailable') {
+      this.error.set('The database connection was lost. You have been signed out. Please sign in again when the service is available.');
+    }
+  }
   submit() {
     if (!this.userName.trim() || !this.password) return;
     this.error.set('');

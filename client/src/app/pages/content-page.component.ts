@@ -20,7 +20,7 @@ interface SectionDraft {
   template: `
     <section class="home-editor-page">
       <ng-container *ngIf="auth.currentUser() && isEditorPage; else publicAbout">
-        <div class="section-head home-editor-heading"><div><p class="eyebrow">SITE ADMINISTRATION</p><h1>Edit home page</h1><p>Update the headline and supporting copy visitors see on the home page.</p></div><span class="admin-badge">Signed in as {{auth.currentUser()?.firstName || auth.currentUser()?.userName}}</span></div>
+        <div class="section-head home-editor-heading"><div><p class="eyebrow">SITE ADMINISTRATION</p><h1>Page content</h1><p>Manage Home and About Us content.</p></div><span class="admin-badge">Signed in as {{auth.currentUser()?.firstName || auth.currentUser()?.userName}}</span></div>
         <p class="home-editor-message success-message" role="status" *ngIf="success()">{{success()}}</p>
         <p class="error" role="alert" *ngIf="error()">{{error()}}</p>
         <form class="card home-copy-editor" (ngSubmit)="saveHome()">
@@ -31,6 +31,13 @@ interface SectionDraft {
           <div class="home-editor-actions"><span>Up to 50 characters for the headline and 500 for the supporting copy.</span><button class="primary" type="submit" [disabled]="saving()">{{saving() ? 'Saving...' : 'Save home page'}}</button></div>
         </form>
 
+        <form class="card home-copy-editor" *ngIf="aboutPage" (ngSubmit)="saveAbout()">
+          <h2>About Us introduction</h2>
+          <label>Introduction (required)<textarea name="aboutTitle" [(ngModel)]="aboutTitle" maxlength="500" rows="3" required></textarea></label>
+          <label>About Us text (required)<textarea name="aboutInformation" [(ngModel)]="aboutInformation" maxlength="10000" rows="14" required></textarea></label>
+          <p>Use blank lines between paragraphs. Edit mission, customer comments, and images below by selecting About Us in Page sections.</p>
+          <button class="primary" type="submit" [disabled]="aboutSaving">{{aboutSaving ? 'Saving...' : 'Save About Us'}}</button>
+        </form>
         <section class="card home-highlight-editor">
           <div class="home-editor-section-heading"><div><p class="eyebrow">OPTIONAL CONTENT</p><h2>Page sections</h2><p>Choose a page to view and manage its optional content sections.</p></div><button type="button" class="primary" (click)="addHighlight()" [disabled]="!sectionPageId()">Add section</button></div>
           <label class="page-section-picker">Page
@@ -89,6 +96,10 @@ interface SectionDraft {
 })
 export class ContentPageComponent implements OnInit {
   readonly isEditorPage: boolean;
+  aboutPage: PageInfo | null = null;
+  aboutTitle = '';
+  aboutInformation = '';
+  aboutSaving = false;
   pageId: number | null = null;
   pages = signal<PageInfo[]>([]);
   sectionPageId = signal<number | null>(null);
@@ -116,6 +127,9 @@ export class ContentPageComponent implements OnInit {
     this.api.pages().subscribe({
       next: pages => {
         this.pages.set(pages);
+        this.aboutPage = pages.find(p => ['about','about us'].includes(p.name.trim().toLowerCase())) || null;
+        this.aboutTitle = this.aboutPage?.title || '';
+        this.aboutInformation = this.aboutPage?.information || '';
         const home: PageInfo | undefined = pages.find(page => page.name.trim().toLowerCase() === 'home');
         if (home) {
           this.pageId = home.pageId;
@@ -177,6 +191,20 @@ export class ContentPageComponent implements OnInit {
       },
       error: handleError
     });
+  }
+
+  saveAbout() {
+    if (!this.aboutPage || this.aboutSaving) return;
+    const title = this.aboutTitle.trim(), information = this.aboutInformation.trim();
+    if (!title || !information) { this.error.set('Enter the About Us introduction and text.'); return; }
+    const pageId = this.aboutPage.pageId;
+    const fields: PageFields = {name: this.aboutPage.name, title, information, servicesIntro: this.aboutPage.servicesIntro || ''};
+    this.aboutSaving = true; this.error.set(''); this.success.set('');
+    this.api.updatePage(pageId, fields).subscribe({next: () => {
+      this.aboutPage = {...this.aboutPage!, ...fields};
+      this.pages.update(rows => rows.map(p => p.pageId === pageId ? {...p,...fields} : p));
+      this.aboutSaving = false; this.success.set('About Us content saved.');
+    }, error: e => {this.aboutSaving = false; this.error.set(e.error?.message || 'Unable to save About Us.');}});
   }
 
   addHighlight() {

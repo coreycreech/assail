@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { ensureAboutContent } from '../src/about-content-migration.js';
+test('seeds About Us separately and preserves existing content on later startups', async () => {
+ const calls=[]; let applied=false;
+ const connection={async query(sql,values){calls.push({sql,values});
+ if(sql.includes('GET_LOCK')) return [[{acquired:1}]];
+ if(sql.includes('information_schema')) return [[{name:'title',capacity:50},{name:'information',capacity:500}]];
+ if(sql.startsWith('SELECT migrationKey')) return [applied?[{}]:[]];
+ if(sql.startsWith('INSERT INTO PageInfo')) return [{insertId:9}];
+ if(sql.startsWith('INSERT INTO AppMigration')) applied=true;
+ return [[]];},async beginTransaction(){},async commit(){},async rollback(){},release(){}};
+ const pool={getConnection:async()=>connection};
+ await ensureAboutContent(pool,()=>{});
+ assert.equal(calls.filter(c=>c.sql.startsWith('INSERT INTO PageInfo')).length,1);
+ const sections=calls.filter(c=>c.sql.startsWith('INSERT INTO PageSection'));
+ assert.equal(sections.length,2);assert.ok(sections.every(c=>c.values[0]===9));
+ assert.ok(!calls.some(c=>c.sql.startsWith('DELETE')));
+ calls.length=0;await ensureAboutContent(pool,()=>{});
+ assert.ok(!calls.some(c=>c.sql.startsWith('INSERT')));
+});
