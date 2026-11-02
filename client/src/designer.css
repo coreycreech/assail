@@ -392,6 +392,46 @@ body {
   .designer-theme .footer-social { margin-top: 48px; flex-direction: column; gap: 14px; }
 }
 
+/* About page layout from the QA reference. */
+.designer-theme .page-banner { padding: 42px 0 48px; background: #f38a00; }
+.designer-theme .page-banner h1 { font-size: 40px; padding-bottom: 20px; margin-bottom: 18px; }
+.designer-theme .page-banner h1::after { width: 100px; }
+.designer-theme .page-banner p { max-width: 560px; font-size: 20px; line-height: 1.5; }
+.designer-theme .about-story { padding: 98px 0 30px; }
+.designer-theme .about-story h2 { font-size: 36px; margin-bottom: 18px; }
+.designer-theme .about-story p { font-size: 16px; line-height: 1.65; margin-bottom: 20px; }
+.designer-theme .about-story p:last-child { margin-bottom: 0; }
+.designer-theme .mission { padding: 24px 0 42px; }
+.designer-theme .mission-inner { gap: 44px; }
+.designer-theme .mission-copy h2 { font-size: 34px; padding-bottom: 18px; margin-bottom: 18px; }
+.designer-theme .mission-copy h2::after { width: 100px; }
+.designer-theme .mission-copy p { font-size: 16px; line-height: 1.65; }
+.designer-theme .customer-comments { padding: 12px 0 34px; }
+.designer-theme .customer-comments .mission-inner { display: block; }
+.designer-theme .customer-comments .mission-copy { position: relative; max-width: 660px; margin-left: 38px; padding: 6px 0 0 52px; }
+.designer-theme .customer-comments .mission-copy::before { content: ""; position: absolute; top: 0; left: 0; width: 42px; height: 36px; background: url("/customer-comments-quote.svg") center/contain no-repeat; }
+.designer-theme .customer-comments .mission-copy p { font-size: 15px; line-height: 1.65; }
+.designer-theme .comment-author { display: block; margin-top: 8px; color: #4a5160; font-size: 14px; }
+.designer-theme .mission-art { position: relative; display: flex; justify-content: center; align-items: center; min-height: 280px; isolation: isolate; }
+.designer-theme .mission-art::before { content: ""; position: absolute; z-index: -1; width: 280px; height: 250px; border-radius: 48% 52% 48% 52%; background: #b8e2ed; }
+.designer-theme .mission-art::after { content: ""; position: absolute; z-index: -1; width: 242px; height: 216px; border: 12px solid #f39200; border-left-color: transparent; border-bottom-color: transparent; border-radius: 50%; transform: rotate(18deg); }
+.designer-theme .mission-art img { width: 220px; height: 240px; max-width: none; margin: 0; object-fit: cover; object-position: center 18%; border-radius: 48% 48% 45% 45%; }
+@media (max-width: 720px) {
+  .designer-theme .page-banner { padding: 38px 0 40px; }
+  .designer-theme .page-banner h1 { font-size: 32px; }
+  .designer-theme .page-banner p { font-size: 17px; }
+  .designer-theme .about-story { padding: 48px 0 30px; }
+  .designer-theme .about-story h2 { font-size: 30px; }
+  .designer-theme .mission-copy h2 { font-size: 30px; }
+  .designer-theme .customer-comments .mission-copy { margin-left: 0; padding-left: 42px; }
+}
+
+/* Frame the alternate doctor portrait in the About page artwork. */
+.designer-theme .mission-art { min-height: 280px; }
+.designer-theme .mission-art::before { content: ""; position: absolute; z-index: -1; width: 280px; height: 250px; border-radius: 48% 52% 48% 52%; background: #b8e2ed; }
+.designer-theme .mission-art::after { content: ""; position: absolute; z-index: -1; width: 242px; height: 216px; border: 12px solid #f39200; border-left-color: transparent; border-bottom-color: transparent; border-radius: 50%; transform: rotate(18deg); }
+.designer-theme .mission-art img { display: block; width: 220px; max-width: 100%; height: 240px; margin: 0 auto; object-fit: cover; object-position: center 18%; border-radius: 48% 48% 45% 45%; }
+
 /* Respect reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -595,3 +635,81 @@ body {
 @media(max-width:400px){.designer-theme .logo img{width:155px;max-width:155px;height:57px}.designer-theme .main-nav{gap:10px}.designer-theme .header-inner{gap:8px}}
 
 .designer-theme .additional-services{margin-top:64px}
+
+/* Design QA refinements for the public Services and About pages. */
+.designer-theme .hero { padding: 48px 0 36px; }
+.designer-theme .hero-inner { gap: 56px; }
+.designer-theme .hero-art { display: block; }
+.designer-theme .hero-copy { max-width: 390px; }
+.designer-theme .hero-copy h1 { color: var(--color-navy-900); font-size: 42px; line-height: 1.15; margin-bottom: 16px; }
+.designer-theme .hero-copy p { font-size: 15px; line-height: 1.55; margin-bottom: 22px; }
+.designer-theme .hero-art img { max-width: 500px; }
+.designer-theme .services { padding: 34px 0 76px; }
+.designer-theme .services::before { top: 140px; left: max(-130px, calc((100vw - 1200px) / 2)); width: 900px; height: 600px; }
+.designer-theme .section-intro { max-width: 880px; margin-bottom: 44px; font-size: 14px; }
+.designer-theme .service-grid { gap: 14px; }
+.designer-theme .service-card { min-height: 220px; padding: 20px 20px 24px; border-radius: 8px; box-shadow: 0 4px 16px rgba(31,78,140,.08); }
+.designer-theme .service-icon-image { width: 48px; height: 48px; margin-bottom: 10px; }
+.designer-theme .service-card h3 { font-size: 15px; margin-bottom: 8px; }
+.designer-theme .service-card p { font-size: 12px; line-height: 1.45; }
+
+.designer-theme .page-banner { padding: 20px 0 22px; background-color: #f38a00; background-image: none; }
+.designer-theme .page-banner h1 { font-size: 30px; padding-bottom: 12px; margin-bottom: 10px; }
+.designer-theme .page-banner h1::after { width: 60px; background: rgba(255,255,255,.9); }
+.designer-theme .page-banner p { font-size: 15px; line-height: 1.4; }
+.designer-theme .about-story { padding: 98px 0 36px; }
+.designer-theme .about-story h2 { font-size: 26px; margin-bottom: 10px; }
+.designer-theme .about-story p { font-size: 13px; line-height: 1.55; margin-bottom: 16px; }
+.designer-theme .mission { padding: 22px 0 54px; }
+.designer-theme .mission-inner { gap: 34px; }
+.designer-theme .mission-copy h2 { font-size: 26px; padding-bottom: 14px; margin-bottom: 14px; }
+.designer-theme .mission-copy h2::after { width: 60px; }
+.designer-theme .mission-copy p { font-size: 13px; line-height: 1.55; }
+.designer-theme .mission-art img { max-width: 340px; }
+.designer-theme .section-heading { font-size: 22px !important; }
+.designer-theme .quote-icon { width: 34px; height: 30px; }
+
+@media (max-width: 720px) {
+  .designer-theme .hero { padding: 32px 0 28px; }
+  .designer-theme .hero-inner { gap: 20px; }
+  .designer-theme .hero-copy h1 { font-size: 32px; }
+  .designer-theme .service-card { min-height: 0; padding: 22px; }
+}
+
+/* Final About page QA overrides, kept after the shared public-page rules. */
+.designer-theme .page-banner { padding: 42px 0 48px; background: #f38a00; }
+.designer-theme .page-banner h1 { font-size: 40px; padding-bottom: 20px; margin-bottom: 18px; }
+.designer-theme .page-banner h1::after { width: 100px; }
+.designer-theme .page-banner p { max-width: 560px; font-size: 20px; line-height: 1.5; }
+.designer-theme .about-story { padding: 98px 0 30px; }
+.designer-theme .about-story h2 { font-size: 36px; margin-bottom: 18px; }
+.designer-theme .about-story p { font-size: 16px; line-height: 1.65; margin-bottom: 20px; }
+.designer-theme .about-story p:last-child { margin-bottom: 0; }
+.designer-theme .mission { padding: 24px 0 42px; }
+.designer-theme .mission-inner { gap: 44px; }
+.designer-theme .mission-copy h2 { font-size: 34px; padding-bottom: 18px; margin-bottom: 18px; }
+.designer-theme .mission-copy h2::after { width: 100px; }
+.designer-theme .mission-copy p { font-size: 16px; line-height: 1.65; }
+.designer-theme .customer-comments { padding: 12px 0 34px; }
+.designer-theme .customer-comments .mission-inner { display: block; }
+.designer-theme .customer-comments .mission-copy { position: relative; max-width: 660px; margin-left: 38px; padding: 6px 0 0 52px; }
+.designer-theme .customer-comments .mission-copy::before { content: ""; position: absolute; top: 0; left: 0; width: 42px; height: 36px; background: url("/customer-comments-quote.svg") center/contain no-repeat; }
+.designer-theme .customer-comments .mission-copy p { font-size: 15px; line-height: 1.65; }
+.designer-theme .comment-author { display: block; margin-top: 8px; color: #4a5160; font-size: 14px; }
+.designer-theme .mission-art { position: relative; display: flex; justify-content: center; align-items: center; min-height: 280px; isolation: isolate; }
+.designer-theme .mission-art::before { content: ""; position: absolute; z-index: -1; width: 280px; height: 250px; border-radius: 48% 52% 48% 52%; background: #b8e2ed; }
+.designer-theme .mission-art::after { content: ""; position: absolute; z-index: -1; width: 242px; height: 216px; border: 12px solid #f39200; border-left-color: transparent; border-bottom-color: transparent; border-radius: 50%; transform: rotate(18deg); }
+.designer-theme .mission-art img { width: 220px; height: 240px; max-width: none; margin: 0; object-fit: cover; object-position: center 18%; border-radius: 48% 48% 45% 45%; }
+@media (max-width: 900px) {
+  .designer-theme .main-nav { gap: 16px; }
+  .designer-theme .nav-link { font-size: 16px; }
+}
+@media (max-width: 720px) {
+  .designer-theme .page-banner { padding: 38px 0 40px; }
+  .designer-theme .page-banner h1 { font-size: 32px; }
+  .designer-theme .page-banner p { font-size: 17px; }
+  .designer-theme .about-story { padding: 48px 0 30px; }
+  .designer-theme .about-story h2,.designer-theme .mission-copy h2 { font-size: 30px; }
+  .designer-theme .mission { padding: 24px 0 48px; }
+  .designer-theme .customer-comments .mission-copy { margin-left: 0; padding-left: 42px; }
+}
